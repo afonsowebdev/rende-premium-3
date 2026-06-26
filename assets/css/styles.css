@@ -78,7 +78,7 @@ button { font-family: inherit; cursor: pointer; }
 ::-webkit-scrollbar-track { background: transparent; }
 
 /* ===== App shell ===== */
-.app { display: grid; grid-template-columns: 1fr; height: 100%; overflow: hidden; }
+.app { display: grid; grid-template-columns: 260px 1fr; height: 100%; overflow: hidden; }
 
 /* ----- Sidebar ----- */
 .sidebar {
@@ -121,19 +121,18 @@ button { font-family: inherit; cursor: pointer; }
 .nav-item.active { color: #fff; }
 [data-theme="dark"] .nav-item.active { color: var(--accent); }
 .nav-item svg { flex: none; }
-.sidebar-foot { margin-top: auto; display: flex; flex-direction: column; gap: 6px; padding-top: 10px; }
+.sidebar-foot { margin-top: auto; }
 .user-chip {
   display: flex; align-items: center; gap: 11px; padding: 10px;
   border-radius: 12px; background: rgba(255,255,255,.06);
-  color: inherit; font-family: inherit; cursor: pointer; border: none; width: 100%;
+  color: inherit; font-family: inherit; cursor: pointer;
   transition: background .14s;
 }
 .user-chip:hover { background: rgba(255,255,255,.12); }
-.user-chip.active { background: color-mix(in srgb, var(--accent) 26%, rgba(255,255,255,.04)); }
 .user-av { width: 34px; height: 34px; border-radius: 50%; background: var(--accent); display: grid; place-items: center; color: #fff; font-weight: 700; font-size: 13px; flex: none; }
 
 /* ----- Main ----- */
-.main { overflow-y: auto; display: flex; flex-direction: column; padding-bottom: 88px; }
+.main { overflow-y: auto; display: flex; flex-direction: column; }
 .topbar {
   position: sticky; top: 0; z-index: 20;
   display: flex; align-items: center; gap: 16px;
@@ -143,7 +142,7 @@ button { font-family: inherit; cursor: pointer; }
 .page-title { font-size: 22px; font-weight: 800; letter-spacing: -.02em; margin: 0; }
 .page-sub { font-size: 13px; color: var(--ink-2); margin: 2px 0 0; font-weight: 500; }
 .topbar-actions { margin-left: auto; display: flex; align-items: center; gap: 10px; }
-.content { padding: 28px 32px 56px; display: flex; flex-direction: column; gap: 22px; width: 100%; max-width: 1120px; margin-inline: auto; box-sizing: border-box; }
+.content { padding: 28px 32px 56px; display: flex; flex-direction: column; gap: 22px; }
 
 /* ----- Generic ----- */
 .card {
@@ -315,13 +314,9 @@ input.range::-moz-range-thumb { width: 19px; height: 19px; border-radius: 50%; b
 .mtab-av.on { border-color: var(--accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 22%, transparent); }
 [data-theme="dark"] .mobilenav { background: var(--surface); border-top-color: rgba(255,255,255,.08);
   box-shadow: 0 -10px 30px -18px rgba(0,0,0,.55); }
-.mtab-more { display: flex; }            /* "Mais" dá acesso às páginas extra (também no desktop) */
-@media (min-width: 861px) {
-  .sidebar { display: none; }                                  /* desktop: navega-se pela barra de baixo */
-  .mobilenav { justify-content: center; gap: 6px; padding-top: 10px; padding-bottom: 12px; }
-  .mtab { flex: 0 0 auto; min-width: 108px; padding: 8px 12px; font-size: 11px; }
-}
-.mobile-brand { display: grid; }   /* marca no topo (a sidebar deixou de existir) */
+.mtab-more { display: none; }            /* "Mais" só aparece no telemóvel */
+@media (min-width: 861px) { .mobilenav { display: none; } }   /* no desktop, a sidebar trata da navegação */
+.mobile-brand { display: none; }
 .sheet-bg { display: none; }
 
 @media (max-width: 860px) {
