@@ -91,14 +91,14 @@ function Landing({ onCreate, onLogin, theme, setTheme, lang, setLang }) {
             <div className="lp-float lp-float-a">
               <div className="row" style={{ gap: 10 }}>
                 <span className="li-ico" style={{ width: 34, height: 34, background: "var(--accent-soft)" }}><Icon name="target" size={16} color="var(--accent)" sw={2} /></span>
-                <div><div className="tiny muted" style={{ fontWeight: 700 }}>Poupança do mês</div><div key={pcur} className="tnum cur-fade" style={{ fontWeight: 800, fontSize: 15 }}>{fmtP(95)}</div></div>
+                <div><div className="tiny muted" style={{ fontWeight: 700 }}>Poupança do mês</div><div key={pcur} className="tnum cur-fade" style={{ fontWeight: 700, fontSize: 15 }}>{fmtP(95)}</div></div>
               </div>
             </div>
             <div className="lp-float lp-float-b">
               <div className="tiny muted" style={{ fontWeight: 700, marginBottom: 4 }}>Na tua moeda</div>
               <div className="row" style={{ gap: 8, alignItems: "center" }}>
                 <span key={pcur} className="cur-pill cur-fade">{pcur}</span>
-                <span key={"v" + pcur} className="tnum cur-fade" style={{ fontWeight: 800, fontSize: 15 }}>{fmtP(317)}</span>
+                <span key={"v" + pcur} className="tnum cur-fade" style={{ fontWeight: 700, fontSize: 15 }}>{fmtP(317)}</span>
               </div>
             </div>
           </div>

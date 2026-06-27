@@ -44,8 +44,8 @@ function DonutChart({ data, size = 168, thickness = 24, center }) {
       {(hover != null && data[hover] && data[hover].valor > 0) ? (
         <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", textAlign: "center", padding: 12 }}>
           <div>
-            <div style={{ fontSize: 11.5, fontWeight: 800, color: data[hover].color, marginBottom: 2 }}>{data[hover].nome || data[hover].label || ""}</div>
-            <div className="tnum" style={{ fontSize: 17, fontWeight: 800 }}>{BM.eur(data[hover].valor)}</div>
+            <div style={{ fontSize: 11.5, fontWeight: 700, color: data[hover].color, marginBottom: 2 }}>{data[hover].nome || data[hover].label || ""}</div>
+            <div className="tnum" style={{ fontSize: 17, fontWeight: 700 }}>{BM.eur(data[hover].valor)}</div>
             <div className="tiny muted" style={{ fontWeight: 700 }}>{Math.round((data[hover].valor / total) * 100)}%</div>
           </div>
         </div>

@@ -57,7 +57,7 @@ function Paywall() {
       <div className="content">
         <div className="card card-pad prem-hero">
           <div className="prem-crown"><Icon name="spark" size={26} color="#fff" /></div>
-          <div style={{ fontWeight: 800, fontSize: 19 }}>Premium ativo</div>
+          <div style={{ fontWeight: 700, fontSize: 19 }}>Premium ativo</div>
           <div className="muted" style={{ marginTop: 6, fontSize: 14 }}>Plano {s.plano === "year" ? "anual" : "mensal"} · obrigado por apoiares o Rende+.</div>
           <button className="btn btn-soft" style={{ marginTop: 16 }} onClick={() => prem.deactivate()}>Cancelar subscrição (demo)</button>
         </div>
@@ -70,7 +70,7 @@ function Paywall() {
     <div className="content">
       <div className="card card-pad paywall">
         <div className="prem-crown"><Icon name="spark" size={26} color="#fff" /></div>
-        <h2 style={{ fontSize: 23, fontWeight: 800, letterSpacing: "-.01em", marginTop: 4 }}>Rende+ Premium</h2>
+        <h2 style={{ fontSize: 23, fontWeight: 700, letterSpacing: "-.01em", marginTop: 4 }}>Rende+ Premium</h2>
         <p className="muted" style={{ marginTop: 6, fontSize: 14 }}>Controla o teu dinheiro com superpoderes.</p>
 
         <div className="prem-feats">
@@ -444,7 +444,7 @@ function PartilhaInner() {
         <div className="card card-pad">
           <div className="row" style={{ justifyContent: "space-between", alignItems: "flex-start" }}>
             <div><b style={{ fontSize: 17 }}>{aberto.nome}</b><div className="tiny muted" style={{ marginTop: 2 }}>{pessoas.join(" · ")}</div></div>
-            <div style={{ textAlign: "right" }}><div className="tiny muted" style={{ fontWeight: 700 }}>Total gasto</div><div className="tnum" style={{ fontWeight: 800, fontSize: 19 }}>{BM.eur(total)}</div></div>
+            <div style={{ textAlign: "right" }}><div className="tiny muted" style={{ fontWeight: 700 }}>Total gasto</div><div className="tnum" style={{ fontWeight: 700, fontSize: 19 }}>{BM.eur(total)}</div></div>
           </div>
         </div>
         <div className="card card-pad">
@@ -598,7 +598,7 @@ function PrevisaoInner() {
         <div className="prev-hero-head">
           <span className="prem-rico" style={{ background: "color-mix(in srgb, var(--accent) 14%, transparent)" }}><Icon name="chart" size={19} color="var(--accent)" /></span>
           <div>
-            <div style={{ fontWeight: 800, fontSize: 15 }}>Previsão de saldo</div>
+            <div style={{ fontWeight: 700, fontSize: 15 }}>Previsão de saldo</div>
             <div className="tiny muted" style={{ fontWeight: 600 }}>Como deves acabar este mês, já a contar com as recorrentes por pagar.</div>
           </div>
         </div>
@@ -615,7 +615,7 @@ function PrevisaoInner() {
         <div className="prev-hero-head" style={{ marginBottom: 14 }}>
           <span className="prem-rico" style={{ background: "color-mix(in srgb, var(--c-habitacao) 14%, transparent)" }}><Icon name="sheet" size={18} color="var(--c-habitacao)" /></span>
           <div>
-            <div style={{ fontWeight: 800, fontSize: 15 }}>Relatório do mês</div>
+            <div style={{ fontWeight: 700, fontSize: 15 }}>Relatório do mês</div>
             <div className="tiny muted" style={{ fontWeight: 600 }}>Escolhe o mês e descarrega o resumo em PDF ou Excel.</div>
           </div>
         </div>
@@ -891,7 +891,7 @@ function NotifBell() {
           <div className="notif-pop-bg" onClick={() => setOpen(false)} />
           <div className="notif-pop" onClick={(e) => e.stopPropagation()}>
             <div className="notif-head">
-              <span style={{ fontWeight: 800, fontSize: 14.5 }}>Notificações</span>
+              <span style={{ fontWeight: 700, fontSize: 14.5 }}>Notificações</span>
               {count > 0 && <span className="notif-head-count">{count}</span>}
             </div>
 

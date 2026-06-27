@@ -200,18 +200,26 @@ function MoreSheet({ route, go, onClose, theme, setTheme, onLogout }) {
     <div className="sheet-bg" onClick={onClose}>
       <div className="sheet" onClick={(e) => e.stopPropagation()}>
         <div className="sheet-grip" />
-        {items.map((it) => (
-          <button key={it.id} className={"sheet-item" + (route === it.id ? " on" : "")} onClick={() => { go(it.id); onClose(); }}>
-            <span className="si-ico"><Icon name={it.icon} size={18} /></span>{it.label}
+        <div className="sheet-head">
+          <span className="sheet-title">Navegação</span>
+          <button className="icon-btn" style={{ width: 32, height: 32 }} onClick={onClose} title="Fechar"><span style={{ transform: "rotate(45deg)", display: "grid" }}><Icon name="plus" size={16} /></span></button>
+        </div>
+        <div className="sheet-grid">
+          {items.map((it) => (
+            <button key={it.id} className={"sheet-tile" + (route === it.id ? " on" : "")} onClick={() => { go(it.id); onClose(); }}>
+              <span className="st-ico"><Icon name={it.icon} size={21} /></span>
+              <span className="st-label">{it.label}</span>
+            </button>
+          ))}
+        </div>
+        <div className="sheet-actions">
+          <button className="sheet-row" onClick={() => { setTheme(theme === "dark" ? "light" : "dark"); }}>
+            <span className="sr-ico"><Icon name={theme === "dark" ? "sun" : "moon"} size={18} /></span>{theme === "dark" ? tr("theme_light") : tr("theme_dark")}
           </button>
-        ))}
-        <div style={{ height: 1, background: "var(--border)", margin: "8px 12px" }} />
-        <button className="sheet-item" onClick={() => { setTheme(theme === "dark" ? "light" : "dark"); }}>
-          <span className="si-ico"><Icon name={theme === "dark" ? "sun" : "moon"} size={18} /></span>{theme === "dark" ? tr("theme_light") : tr("theme_dark")}
-        </button>
-        <button className="sheet-item" style={{ color: "var(--neg)" }} onClick={() => { onClose(); onLogout(); }}>
-          <span className="si-ico"><Icon name="logout" size={18} color="var(--neg)" /></span>{tr("logout_full")}
-        </button>
+          <button className="sheet-row danger" onClick={() => { onClose(); onLogout(); }}>
+            <span className="sr-ico"><Icon name="logout" size={18} color="var(--neg)" /></span>{tr("logout_full")}
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -267,7 +275,7 @@ function EmptyState({ icon, title, msg, action }) {
       <div className="li-ico" style={{ width: 60, height: 60, marginBottom: 18, background: "var(--accent-soft)" }}>
         <Icon name={icon} size={26} color="var(--accent)" sw={1.8} />
       </div>
-      <div style={{ fontWeight: 800, fontSize: 18, letterSpacing: "-.01em" }}>{title}</div>
+      <div style={{ fontWeight: 700, fontSize: 18, letterSpacing: "-.01em" }}>{title}</div>
       <div className="muted" style={{ marginTop: 7, fontSize: 14, fontWeight: 500, maxWidth: 380, lineHeight: 1.55 }}>{msg}</div>
       {action && <div className="empty-action" style={{ marginTop: 20, width: "100%" }}>{action}</div>}
     </div>
@@ -284,7 +292,7 @@ function Modal({ title, sub, onClose, children, footer, wide }) {
       <div className="modal" style={wide ? { maxWidth: 560 } : null} onClick={(e) => e.stopPropagation()}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 20px", borderBottom: "1px solid var(--border)", flexShrink: 0 }}>
           <div>
-            <div style={{ fontWeight: 800, fontSize: 16 }}>{title}</div>
+            <div style={{ fontWeight: 700, fontSize: 16 }}>{title}</div>
             {sub && <div className="tiny muted" style={{ fontWeight: 600, marginTop: 2 }}>{sub}</div>}
           </div>
           <button className="icon-btn" style={{ width: 32, height: 32 }} onClick={onClose}><span style={{ transform: "rotate(45deg)", display: "grid" }}><Icon name="plus" size={17} sw={2} color="var(--ink-2)" /></span></button>
