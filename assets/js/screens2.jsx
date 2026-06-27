@@ -8,6 +8,8 @@ function Poupanca({ open }) {
   const totalAtual = metas.reduce((s, m) => s + (+m.atual || 0), 0);
   const pct = totalAlvo > 0 ? Math.round((totalAtual / totalAlvo) * 100) : 0;
   const mesLabel = (key) => { const [y, mo] = (key || "").split("-").map(Number); return mo ? BM.MESES[mo - 1] + " " + y : ""; };
+  const [vista, setVista] = React.useState("evo");
+  const poupDonut = metas.filter((m) => (+m.atual || 0) > 0).map((m) => ({ nome: m.nome, valor: +m.atual, color: m.cor }));
 
   return (
     <div className="content">
@@ -67,11 +69,26 @@ function Poupanca({ open }) {
         <div className="card card-pad">
           <div className="section-head" style={{ marginBottom: 12 }}>
             <div>
-              <div className="section-title">Evolução das poupanças</div>
-              <div className="tiny muted" style={{ fontWeight: 600, marginTop: 2 }}>Acumulado de cada meta, mês a mês — as concluídas aparecem a tracejado</div>
+              <div className="section-title">As tuas poupanças</div>
+              <div className="tiny muted" style={{ fontWeight: 600, marginTop: 2 }}>{vista === "evo" ? "Acumulado de cada meta, mês a mês — as concluídas aparecem a tracejado" : "Quanto tens em cada meta, fatia do total poupado"}</div>
+            </div>
+            <div className="seg">
+              <button className={"seg-btn" + (vista === "evo" ? " on" : "")} onClick={() => setVista("evo")}><Icon name="chart" size={14} /> Evolução</button>
+              <button className={"seg-btn" + (vista === "meta" ? " on" : "")} onClick={() => setVista("meta")}><Icon name="target" size={14} /> Por meta</button>
             </div>
           </div>
-          <MultiLineSavings months={fin.series.map((s) => s.m)} series={fin.metaSeries} />
+          {vista === "evo" ? (
+            <MultiLineSavings months={fin.series.map((s) => s.m)} series={fin.metaSeries} />
+          ) : poupDonut.length === 0 ? (
+            <div style={{ display: "grid", placeItems: "center", height: 180, textAlign: "center" }} className="muted tiny">
+              <div><Icon name="target" size={26} color="var(--ink-3)" /><div style={{ marginTop: 8, fontWeight: 600 }}>Ainda não depositaste em nenhuma meta.</div></div>
+            </div>
+          ) : (
+            <div style={{ display: "flex", justifyContent: "center", padding: "8px 0 4px" }}>
+              <DonutChart data={poupDonut} size={200} thickness={32}
+                center={<div style={{ textAlign: "center" }}><div className="tnum valor-sensivel" style={{ fontSize: 23, fontWeight: 800, letterSpacing: "-.02em" }}>{BM.eur0(totalAtual)}</div><div className="tiny muted" style={{ fontWeight: 600 }}>poupado</div></div>} />
+            </div>
+          )}
           <div className="row" style={{ flexWrap: "wrap", gap: 16, marginTop: 14 }}>
             {fin.metaSeries.map((s) => (
               <span key={s.id} className="row" style={{ gap: 7, fontSize: 12.5, fontWeight: 700, opacity: s.fechada ? 0.6 : 1 }}>

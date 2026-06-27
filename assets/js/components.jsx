@@ -45,7 +45,7 @@ function Brand({ nameColor = "var(--ink)", size = 38, sub = null, onClick, premi
   );
 }
 
-function Sidebar({ route, go, account, collapsed, onToggle }) {
+function Sidebar({ route, go, account, collapsed, onToggle, onLogout }) {
   const tr = useT();
   const nav = [
     { id: "dashboard", label: tr("lbl_dashboard"), icon: "grid" },
@@ -85,6 +85,12 @@ function Sidebar({ route, go, account, collapsed, onToggle }) {
       <div className="nav-label row" style={{ justifyContent: "space-between", paddingRight: 4 }}>Premium <PremiumBadge /></div>
       {navPrem.map(Item)}
       <div className="sidebar-foot">
+        {onLogout && (
+          <button className="nav-item" onClick={onLogout} title={tr("logout_short")}>
+            <Icon name="logout" size={19} />
+            <span>{tr("logout_full")}</span>
+          </button>
+        )}
         <button className="nav-item sb-toggle" onClick={onToggle} title={collapsed ? tr("sb_expand") : tr("sb_collapse")}>
           <span style={{ display: "grid", transform: collapsed ? "rotate(180deg)" : "none" }}><Icon name="collapse" size={19} /></span>
           <span>{collapsed ? tr("sb_expand") : tr("sb_collapse")}</span>
@@ -111,7 +117,7 @@ function MonthNav({ label, onPrev, onNext, canNext = true, isCurrent, onToday })
   );
 }
 
-function Topbar({ title, sub, theme, setTheme, onLogout, onAdd, addLabel, monthNav }) {
+function Topbar({ title, sub, theme, setTheme, onLogout, onAdd, addLabel, monthNav, ocultar, onToggleOcultar }) {
   const tr = useT();
   return (
     <div className="topbar">
@@ -130,10 +136,14 @@ function Topbar({ title, sub, theme, setTheme, onLogout, onAdd, addLabel, monthN
           </button>
         )}
         <NotifBell />
-        <button className="icon-btn" onClick={() => setTheme(theme === "dark" ? "light" : "dark")} title={tr("theme_title")}>
+        {onToggleOcultar && (
+          <button className="icon-btn" onClick={onToggleOcultar} title={ocultar ? "Mostrar valores" : "Ocultar valores"} aria-pressed={ocultar}>
+            <Icon name={ocultar ? "eyeOff" : "eye"} size={18} />
+          </button>
+        )}
+        <button className="icon-btn hide-mobile" onClick={() => setTheme(theme === "dark" ? "light" : "dark")} title={tr("theme_title")}>
           <Icon name={theme === "dark" ? "sun" : "moon"} size={18} />
         </button>
-        <button className="icon-btn hide-mobile" onClick={onLogout} title={tr("logout_short")}><Icon name="logout" size={18} /></button>
       </div>
     </div>
   );
@@ -226,7 +236,7 @@ function Kpi({ label, value, sub, delta, deltaDir, icon, color, spark, onClick }
       </div>
       <div>
         <div className="kpi-label">{label}{onClick && <Icon name="chevR" size={13} color="var(--ink-3)" />}</div>
-        <div className="kpi-val tnum" style={{ marginTop: 6 }}>{value}</div>
+        <div className="kpi-val tnum valor-sensivel" style={{ marginTop: 6 }}>{value}</div>
         {sub && <div className="tiny muted" style={{ marginTop: 7, fontWeight: 600 }}>{sub}</div>}
       </div>
     </div>

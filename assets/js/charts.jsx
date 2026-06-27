@@ -8,6 +8,7 @@ function DonutChart({ data, size = 168, thickness = 24, center }) {
   const items = data.filter((d) => d.valor > 0);
   const gap = items.length > 1 ? Math.min(C * 0.012, 6) : 0; // espaço entre fatias
   const uid = "dn" + Math.random().toString(36).slice(2, 9);
+  const [hover, setHover] = React.useState(null);
   let acc = 0;
   return (
     <div className="donut-wrap" style={{ position: "relative", width: size, height: size, flex: "none" }}>
@@ -32,18 +33,27 @@ function DonutChart({ data, size = 168, thickness = 24, center }) {
               <circle key={i} className="donut-seg" cx={cx} cy={cy} r={r} fill="none" stroke={d.color}
                 strokeWidth={thickness} strokeDasharray={`${seg} ${C - seg}`}
                 strokeDashoffset={-start} strokeLinecap="round"
-                style={{ animationDelay: `${0.1 + i * 0.08}s` }} />
+                onMouseEnter={() => setHover(i)} onMouseLeave={() => setHover(null)}
+                style={{ animationDelay: `${0.1 + i * 0.08}s`, cursor: "pointer", opacity: hover == null || hover === i ? 1 : 0.35, transition: "opacity .15s" }} />
             );
             acc += len;
             return el;
           })}
         </g>
       </svg>
-      {center && (
+      {(hover != null && data[hover] && data[hover].valor > 0) ? (
+        <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", textAlign: "center", padding: 12 }}>
+          <div>
+            <div style={{ fontSize: 11.5, fontWeight: 800, color: data[hover].color, marginBottom: 2 }}>{data[hover].nome || data[hover].label || ""}</div>
+            <div className="tnum" style={{ fontSize: 17, fontWeight: 800 }}>{BM.eur(data[hover].valor)}</div>
+            <div className="tiny muted" style={{ fontWeight: 700 }}>{Math.round((data[hover].valor / total) * 100)}%</div>
+          </div>
+        </div>
+      ) : center ? (
         <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", textAlign: "center" }}>
           {center}
         </div>
-      )}
+      ) : null}
     </div>
   );
 }
@@ -51,6 +61,7 @@ function DonutChart({ data, size = 168, thickness = 24, center }) {
 function LineChart({ data, height = 216, color = "var(--accent)", color2 = "var(--c-transporte)" }) {
   const ref = React.useRef(null);
   const [w, setW] = React.useState(560);
+  const [hi, setHi] = React.useState(null);
   React.useLayoutEffect(() => {
     const el = ref.current;
     if (!el) return;
@@ -93,7 +104,7 @@ function LineChart({ data, height = 216, color = "var(--accent)", color2 = "var(
   const rRec = mobile ? 4 : 3.8, rGasto = mobile ? 3.4 : 3.2;
 
   return (
-    <div ref={ref} style={{ width: "100%" }}>
+    <div ref={ref} style={{ width: "100%", position: "relative" }}>
       <svg viewBox={`0 0 ${W} ${H}`} width="100%" height={H} style={{ display: "block", overflow: "visible" }}>
         <defs>
           <linearGradient id="lg-rec" x1="0" y1="0" x2="0" y2="1">
@@ -117,7 +128,19 @@ function LineChart({ data, height = 216, color = "var(--accent)", color2 = "var(
             </g>
           ))}
         </g>
+        {hi != null && <line x1={x(hi)} x2={x(hi)} y1={pad.t} y2={base} stroke="var(--ink-3)" strokeWidth="1" strokeDasharray="3 4" opacity="0.45" />}
+        {data.map((d, i) => {
+          const step = (W - pad.l - pad.r) / (data.length - 1 || 1);
+          return <rect key={"hit" + i} x={x(i) - step / 2} y={pad.t} width={step} height={base - pad.t} fill="transparent" onMouseEnter={() => setHi(i)} onMouseLeave={() => setHi(null)} style={{ cursor: "pointer" }} />;
+        })}
       </svg>
+      {hi != null && data[hi] && (
+        <div className="lc-tip" style={{ left: (x(hi) / W * 100) + "%" }}>
+          <div className="lc-tip-m">{data[hi].m}</div>
+          <div className="lc-tip-row"><span className="dot" style={{ background: color }} /> Recebido <b className="tnum">{BM.eur(data[hi].rec)}</b></div>
+          <div className="lc-tip-row"><span className="dot" style={{ background: color2 }} /> Gasto <b className="tnum">{BM.eur(data[hi].gasto)}</b></div>
+        </div>
+      )}
     </div>
   );
 }
@@ -198,7 +221,7 @@ function BarBreakdown({ data, money, labelOf }) {
         const pct = Math.round((c.valor / tot) * 100);
         const w = Math.max(4, Math.round((c.valor / max) * 100));
         return (
-          <div key={c.key}>
+          <div key={c.key} title={(labelOf ? labelOf(c) : c.nome) + " — " + money(c.valor) + " · " + pct + "%"} style={{ cursor: "default" }}>
             <div className="row" style={{ justifyContent: "space-between", marginBottom: 7, alignItems: "baseline" }}>
               <span className="row" style={{ gap: 8, fontSize: 13, fontWeight: 700 }}><span className="dot" style={{ background: c.color }} />{labelOf ? labelOf(c) : c.nome}</span>
               <span className="tnum" style={{ fontSize: 12.5, fontWeight: 700 }}>{money(c.valor)} <span className="muted" style={{ fontWeight: 600 }}>· {pct}%</span></span>

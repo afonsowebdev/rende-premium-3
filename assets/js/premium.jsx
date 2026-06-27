@@ -6,7 +6,7 @@ const PremiumStore = (function () {
   let email = "anon";
   let state = null;
   const subs = new Set();
-  const DEF = { premium: true, plano: "month", lembretes: [], recorrentes: [], grupos: [], subscricoes: [], pagosSub: {}, notif: { ativo: true, aviso: 3 }, notifLog: {} };
+  const DEF = { premium: true, plano: "month", lembretes: [], recorrentes: [], grupos: [], subscricoes: [], pagosSub: {}, pagosRec: {}, notif: { ativo: true, aviso: 3 }, notifLog: {} };
   const KEY = () => "rende_premium_" + email;
   const read = () => { try { return { ...DEF, ...(JSON.parse(localStorage.getItem(KEY()) || "{}")) }; } catch (e) { return { ...DEF }; } };
   const persist = () => { try { localStorage.setItem(KEY(), JSON.stringify(state)); } catch (e) {} };
@@ -271,32 +271,69 @@ function RecorrenteModal({ onClose, onSave }) {
 
 function Recorrentes() { return <PremiumGate><RecorrentesInner /></PremiumGate>; }
 function RecorrentesInner() {
+  const fin = useFinance();
   const prem = usePremium();
+  const mes = fin.month; // mês selecionado no topo
   const lista = [...(prem.get().recorrentes || [])].sort((a, b) => (a.dia || 0) - (b.dia || 0));
+  const pagos = prem.get().pagosRec || {};
   const [modal, setModal] = React.useState(false);
+
+  const isPago = (id) => !!(pagos[id] && pagos[id][mes]);
+  const togglePago = (id) => {
+    const cur = prem.get().pagosRec || {};
+    const ms = { ...(cur[id] || {}) };
+    if (ms[mes]) delete ms[mes]; else ms[mes] = true;
+    prem.update({ pagosRec: { ...cur, [id]: ms } });
+  };
+  const apagar = (id) => {
+    const cur = prem.get().pagosRec || {};
+    if (cur[id]) { const c2 = { ...cur }; delete c2[id]; prem.update({ pagosRec: c2 }); }
+    prem.remove("recorrentes", id);
+  };
+
   const total = lista.reduce((s, x) => s + (+x.valor || 0), 0);
+  const nPagas = lista.filter((r) => isPago(r.id)).length;
+  const pagoTotal = lista.filter((r) => isPago(r.id)).reduce((s, x) => s + (+x.valor || 0), 0);
+  const falta = total - pagoTotal;
+
   return (
     <div className="content">
       <PremActions label="Nova recorrente" onAdd={() => setModal(true)} />
       {lista.length === 0 ? (
-        <EmptyState icon="sync" title="Sem despesas recorrentes" msg="Regista as despesas que se repetem todos os meses e elas entram sozinhas."
+        <EmptyState icon="sync" title="Sem despesas recorrentes" msg="Regista as despesas que se repetem todos os meses (renda, água, seguros…) e marca cada mês o que já pagaste."
           action={<button className="btn btn-primary" onClick={() => setModal(true)}><Icon name="plus" size={16} color="#fff" /> Adicionar</button>} />
       ) : (
         <>
-          <div className="card card-pad" style={{ marginBottom: 14 }}>
-            <div className="tiny muted" style={{ fontWeight: 700 }}>Total recorrente / mês</div>
-            <div className="tnum" style={{ fontSize: 26, fontWeight: 800, marginTop: 4 }}>{BM.eur(total)}</div>
+          <div className="prem-stats">
+            <div className="prem-stat"><span className="prem-stat-l">Total / mês</span><span className="prem-stat-v tnum valor-sensivel">{BM.eur(total)}</span><span className="prem-stat-s">{lista.length} despesa{lista.length === 1 ? "" : "s"}</span></div>
+            <div className="prem-stat ok"><span className="prem-stat-l">Já pago</span><span className="prem-stat-v tnum valor-sensivel">{BM.eur(pagoTotal)}</span><span className="prem-stat-s">{nPagas} marcada{nPagas === 1 ? "" : "s"}</span></div>
+            <div className={"prem-stat" + (falta > 0 ? " danger" : "")}><span className="prem-stat-l">Falta pagar</span><span className="prem-stat-v tnum valor-sensivel">{BM.eur(falta)}</span><span className="prem-stat-s">{lista.length - nPagas} por pagar</span></div>
           </div>
           <div className="card card-pad">
-            {lista.map((r) => (
-              <div className="prem-row" key={r.id}>
-                <span className="prem-rico"><Icon name={(BM.cats[r.cat] || BM.cats.outros).icon} size={19} color={(BM.cats[r.cat] || BM.cats.outros).color} /></span>
-                <div className="prem-rtxt"><b>{r.titulo}</b><span className="muted" style={{ fontSize: 12.5 }}>Todos os dias {r.dia}</span></div>
-                <div className="prem-ramt">{BM.eur(r.valor)}</div>
-                <div className="prem-rbtns"><button className="icon-btn" title="Apagar" onClick={() => prem.remove("recorrentes", r.id)}><Icon name="trash" size={16} color="var(--neg)" /></button></div>
-              </div>
-            ))}
+            {lista.map((r) => {
+              const pago = isPago(r.id);
+              const ic = BM.cats[r.cat] || BM.cats.outros;
+              return (
+                <div className={"prem-row" + (pago ? " is-paid" : "")} key={r.id}>
+                  <span className="prem-rico" style={{ background: `color-mix(in srgb, ${ic.color} 14%, transparent)` }}><Icon name={ic.icon} size={19} color={ic.color} /></span>
+                  <div className="prem-rtxt">
+                    <b style={pago ? { opacity: .55 } : null}>{r.titulo}</b>
+                    <span className="muted" style={{ fontSize: 12.5 }}>Todos os dias {r.dia}{pago ? " · pago ✓" : ""}</span>
+                  </div>
+                  <div className="prem-ramt valor-sensivel" style={pago ? { opacity: .55 } : null}>{BM.eur(r.valor)}</div>
+                  <div className="prem-rbtns">
+                    <button className={"sub-check" + (pago ? " on" : "")} title={pago ? "Marcar como por pagar" : "Marcar como pago"} onClick={() => togglePago(r.id)}>
+                      <Icon name="check" size={15} color={pago ? "#fff" : "var(--ink-3)"} />
+                    </button>
+                    <button className="icon-btn" title="Apagar" onClick={() => apagar(r.id)}><Icon name="trash" size={16} color="var(--neg)" /></button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
+          <p className="tiny muted" style={{ textAlign: "center", marginTop: 14, fontWeight: 600, lineHeight: 1.5 }}>
+            Muda o mês nas setas lá em cima para marcares pagamentos de outros meses. Cada mês guarda as suas próprias marcas.
+          </p>
         </>
       )}
       {modal && <RecorrenteModal onClose={() => setModal(false)} onSave={(it) => { prem.add("recorrentes", it); setModal(false); }} />}
@@ -557,16 +594,31 @@ function PrevisaoInner() {
 
   return (
     <div className="content">
-      <div className="card card-pad" style={{ marginBottom: 14 }}>
-        <div className="tiny muted" style={{ fontWeight: 700 }}>Previsão de saldo</div>
-        <div className="prem-frow"><span>Saldo atual</span><b className="tnum">{BM.eur(saldoAtual)}</b></div>
-        <div className="prem-frow"><span>Recorrentes ainda por sair</span><b className="tnum" style={{ color: "var(--neg)" }}>−{BM.eur(aSair)}</b></div>
-        <div className="prem-frow total"><span>No fim do mês</span><b className="tnum" style={{ color: fimMes >= 0 ? "var(--accent)" : "var(--neg)" }}>{BM.eur(fimMes)}</b></div>
+      <div className="card card-pad">
+        <div className="prev-hero-head">
+          <span className="prem-rico" style={{ background: "color-mix(in srgb, var(--accent) 14%, transparent)" }}><Icon name="chart" size={19} color="var(--accent)" /></span>
+          <div>
+            <div style={{ fontWeight: 800, fontSize: 15 }}>Previsão de saldo</div>
+            <div className="tiny muted" style={{ fontWeight: 600 }}>Como deves acabar este mês, já a contar com as recorrentes por pagar.</div>
+          </div>
+        </div>
+        <div className="prev-proj">
+          <div className="prev-proj-l">No fim do mês</div>
+          <div className="prev-proj-v tnum valor-sensivel" style={{ color: fimMes >= 0 ? "var(--accent)" : "var(--neg)" }}>{BM.eur(fimMes)}</div>
+          <div className="tiny muted" style={{ fontWeight: 600, marginTop: 7 }}>
+            <span className="valor-sensivel">{BM.eur(saldoAtual)}</span> de saldo atual − <span className="valor-sensivel">{BM.eur(aSair)}</span> de recorrentes ainda por pagar
+          </div>
+        </div>
       </div>
 
       <div className="card card-pad">
-        <div style={{ fontWeight: 800, fontSize: 15 }}>Relatório do mês</div>
-        <p className="muted" style={{ fontSize: 13.5, margin: "6px 0 14px" }}>Escolhe o mês e descarrega o resumo completo em PDF ou Excel.</p>
+        <div className="prev-hero-head" style={{ marginBottom: 14 }}>
+          <span className="prem-rico" style={{ background: "color-mix(in srgb, var(--c-habitacao) 14%, transparent)" }}><Icon name="sheet" size={18} color="var(--c-habitacao)" /></span>
+          <div>
+            <div style={{ fontWeight: 800, fontSize: 15 }}>Relatório do mês</div>
+            <div className="tiny muted" style={{ fontWeight: 600 }}>Escolhe o mês e descarrega o resumo em PDF ou Excel.</div>
+          </div>
+        </div>
 
         <Field label="Mês">
           <select className="select" value={mes} onChange={(e) => setMes(e.target.value)}>
@@ -574,9 +626,11 @@ function PrevisaoInner() {
           </select>
         </Field>
 
-        <div className="prem-frow" style={{ marginTop: 12 }}><span>Rendimentos</span><b className="tnum" style={{ color: "var(--accent)" }}>{BM.eur(totR)}</b></div>
-        <div className="prem-frow"><span>Despesas</span><b className="tnum" style={{ color: "var(--neg)" }}>{BM.eur(totD)}</b></div>
-        <div className="prem-frow total"><span>Saldo do mês</span><b className="tnum">{BM.eur(totR - totD)}</b></div>
+        <div className="prem-stats" style={{ marginTop: 14 }}>
+          <div className="prem-stat ok"><span className="prem-stat-l">Rendimentos</span><span className="prem-stat-v tnum valor-sensivel">{BM.eur(totR)}</span></div>
+          <div className="prem-stat danger"><span className="prem-stat-l">Despesas</span><span className="prem-stat-v tnum valor-sensivel">{BM.eur(totD)}</span></div>
+          <div className="prem-stat"><span className="prem-stat-l">Saldo do mês</span><span className="prem-stat-v tnum valor-sensivel">{BM.eur(totR - totD)}</span></div>
+        </div>
 
         <div className="row" style={{ gap: 10, marginTop: 16, flexWrap: "wrap" }}>
           <button className="btn btn-primary" onClick={baixarPDF}><Icon name="pdf" size={16} color="#fff" /> Descarregar PDF</button>
@@ -759,6 +813,13 @@ function scanAlertas(prem) {
     const d = daysUntil(alvo);
     if (d <= aviso) out.push({ chave: "sub:" + x.id + ":" + mes, tipo: "subscricao", id: x.id, titulo: x.nome, valor: x.valor, d });
   });
+  const pagosR = s.pagosRec || {};
+  (s.recorrentes || []).forEach((r) => {
+    if (pagosR[r.id] && pagosR[r.id][mes]) return; // já paga este mês
+    const alvo = mes + "-" + String(Math.min(28, r.dia || 1)).padStart(2, "0");
+    const d = daysUntil(alvo);
+    if (d <= aviso) out.push({ chave: "rec:" + r.id + ":" + mes, tipo: "recorrente", id: r.id, titulo: r.titulo, valor: r.valor, d });
+  });
   return out.sort((a, b) => a.d - b.d);
 }
 
@@ -770,8 +831,9 @@ function resolverAlerta(prem, a) {
     else prem.edit("lembretes", a.id, { pago: true });
   } else {
     const mes = BM.todayISO().slice(0, 7);
-    const cur = prem.get().pagosSub || {};
-    prem.update({ pagosSub: { ...cur, [a.id]: { ...(cur[a.id] || {}), [mes]: true } } });
+    const chave = a.tipo === "recorrente" ? "pagosRec" : "pagosSub";
+    const cur = prem.get()[chave] || {};
+    prem.update({ [chave]: { ...cur, [a.id]: { ...(cur[a.id] || {}), [mes]: true } } });
   }
 }
 
@@ -853,7 +915,7 @@ function NotifBell() {
                   const cor = a.d < 0 ? "var(--neg)" : a.d === 0 ? "var(--neg)" : "var(--accent)";
                   return (
                     <div className="notif-item" key={a.chave}>
-                      <span className="notif-item-ico" style={{ background: `color-mix(in srgb, ${cor} 14%, transparent)` }}><Icon name={a.tipo === "subscricao" ? "tv" : "bell"} size={16} color={cor} /></span>
+                      <span className="notif-item-ico" style={{ background: `color-mix(in srgb, ${cor} 14%, transparent)` }}><Icon name={a.tipo === "subscricao" ? "tv" : a.tipo === "recorrente" ? "sync" : "bell"} size={16} color={cor} /></span>
                       <div className="notif-item-txt">
                         <b>{a.titulo}</b>
                         <span style={{ color: cor, fontWeight: 700 }}>{quandoTxt(a.d)} · {BM.eur(a.valor)}</span>
