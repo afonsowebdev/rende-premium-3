@@ -1004,3 +1004,83 @@ input.range::-moz-range-thumb { width: 19px; height: 19px; border-radius: 50%; b
 .sheet-row .sr-ico { width: 36px; height: 36px; border-radius: 11px; display: grid; place-items: center; background: var(--surface-2); flex: none; }
 .sheet-row.danger { color: var(--neg); }
 .sheet-row.danger .sr-ico { background: color-mix(in srgb, var(--neg) 12%, transparent); }
+/* ============================================================
+   RENDE+ · Design refresh (linguagem Fluent / profissional) — v2
+   Camada final: refina tokens, sidebar claro, cartões, inputs.
+   Mantém a identidade verde (--accent). Carregado por último,
+   por isso refina o sistema sem reescrever as regras anteriores.
+   ============================================================ */
+
+/* ---- Tokens: neutros mais limpos + sombras suaves em camadas ---- */
+[data-theme="light"] {
+  --bg: #eef2f0;
+  --surface: #ffffff;
+  --surface-2: #f5f8f6;
+  --ink: #0f1a16;
+  --ink-2: #46544d;
+  --ink-3: #7c897f;
+  --border: #e8edea;
+  --border-strong: #dde4e0;
+  --accent-soft: color-mix(in srgb, var(--accent) 12%, #ffffff);
+  --shadow-sm: 0 1px 2px rgba(16,40,28,.05);
+  --shadow: 0 1px 2px rgba(16,40,28,.04), 0 10px 26px -16px rgba(16,40,28,.20);
+  --shadow-md: 0 2px 8px rgba(16,40,28,.06), 0 20px 44px -20px rgba(16,40,28,.28);
+}
+[data-theme="dark"] {
+  --shadow-md: 0 2px 8px rgba(0,0,0,.42), 0 20px 46px -20px rgba(0,0,0,.62);
+}
+
+/* ---- Sidebar: claro, calmo e profissional (estilo Fluent) ---- */
+[data-theme="light"] .sidebar {
+  background: var(--surface);
+  color: var(--ink-2);
+  border-right: 1px solid var(--border);
+}
+[data-theme="light"] .nav-label { color: var(--ink-3); opacity: 1; }
+[data-theme="light"] .nav-item { color: var(--ink-2); opacity: 1; }
+[data-theme="light"] .nav-item:hover { background: var(--surface-2); color: var(--ink); }
+[data-theme="light"] .nav-item.active { background: var(--accent-soft); color: var(--accent); }
+.nav-item { position: relative; }
+.nav-item.active::before {
+  content: ""; position: absolute; left: -16px; top: 9px; bottom: 9px;
+  width: 3px; border-radius: 0 4px 4px 0; background: var(--accent);
+}
+[data-theme="light"] .user-chip { background: var(--surface-2); border: 1px solid var(--border); }
+[data-theme="light"] .user-chip:hover { background: var(--surface); border-color: var(--border-strong); }
+
+/* ---- Cartões: cantos suaves, sombra leve, micro-elevação no hover ---- */
+.card {
+  box-shadow: var(--shadow);
+  transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+}
+.card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.modal { box-shadow: var(--shadow-md); }
+.modal:hover { transform: none; }
+
+/* ---- Botões: primário verde com profundidade subtil ---- */
+.btn-primary { box-shadow: 0 1px 2px rgba(20,160,107,.20), 0 8px 18px -10px rgba(20,160,107,.55); }
+.btn-primary:hover { box-shadow: 0 2px 4px rgba(20,160,107,.24), 0 12px 24px -10px rgba(20,160,107,.6); transform: translateY(-1px); }
+
+/* ---- Inputs: caixa moderna com anel de foco (em vez de underline) ---- */
+.input, .select {
+  padding: 11px 13px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+[data-theme="dark"] .input, [data-theme="dark"] .select { background: var(--surface-2); }
+.input:focus, .select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3.5px var(--accent-soft);
+}
+
+/* ---- Pesquisa / campos arredondados na topbar herdam o novo input ---- */
+.icon-btn { border-radius: var(--radius-sm); }
+
+/* ---- Chips e segmentos: um pouco mais suaves ---- */
+.chip { border-radius: var(--radius-pill); }
+.seg { border-radius: var(--radius-sm); }
+
+/* ---- Foco visível acessível em toda a app ---- */
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+@media (prefers-reduced-motion: reduce) { .card, .btn-primary { transition: none; } .card:hover, .btn-primary:hover { transform: none; } }

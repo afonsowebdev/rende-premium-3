@@ -75,7 +75,7 @@ function Sidebar({ route, go, account, collapsed, onToggle, onLogout }) {
     <aside className="sidebar">
       <div style={{ padding: "4px 8px 22px" }}>
         <button onClick={() => go("dashboard")} style={{ border: "none", background: "none", padding: 0, cursor: "pointer" }} title={tr("go_dashboard")}>
-          <Brand nameColor="#fff" premiumBelow />
+          <Brand nameColor="var(--ink)" premiumBelow />
         </button>
       </div>
       <div className="nav-label">{tr("lbl_general")}</div>
