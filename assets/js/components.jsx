@@ -22,7 +22,7 @@ function CatBadge({ catKey, size = 40, r = 12 }) {
   );
 }
 
-function Brand({ nameColor = "var(--ink)", size = 38, sub = null, onClick, premium = true, premiumBelow = false }) {
+function Brand({ nameColor = "var(--ink)", size = 38, sub = null, onClick, premium = false, premiumBelow = false }) {
   const prem = premium ? <span className={"brand-prem" + (premiumBelow ? " brand-prem-below" : "")}>Premium</span> : null;
   return (
     <div className="brand" style={{ padding: 0, cursor: onClick ? "pointer" : "default" }} onClick={onClick}>
@@ -133,15 +133,19 @@ function Topbar({ title, sub, theme, setTheme, onLogout, ocultar, onToggleOculta
             <Icon name="menu" size={23} />
           </button>
         )}
-        <div className="mobile-brand brand-mark" style={{ width: 34, height: 34, borderRadius: 10 }}><span className="brand-mark-txt" style={{ fontSize: 17 }}>R</span></div>
-        <div className="topbar-title" style={{ minWidth: 0 }}>
+        <div className="topbar-title hide-mobile" style={{ minWidth: 0 }}>
           <h1 className="page-title">{title}</h1>
           {sub && <p className="page-sub">{sub}</p>}
         </div>
       </div>
+      {onMenu && (
+        <button className="topbar-logo show-mobile" onClick={onMenu} aria-label="Abrir menu" title="Abrir menu">
+          <Brand nameColor="var(--ink)" />
+        </button>
+      )}
       <div className="topbar-actions">
         {onToggleOcultar && (
-          <button className="icon-btn" onClick={onToggleOcultar} title={ocultar ? "Mostrar valores" : "Ocultar valores"} aria-pressed={ocultar}>
+          <button className="icon-btn hide-mobile" onClick={onToggleOcultar} title={ocultar ? "Mostrar valores" : "Ocultar valores"} aria-pressed={ocultar}>
             <Icon name={ocultar ? "eyeOff" : "eye"} size={18} />
           </button>
         )}
@@ -149,7 +153,7 @@ function Topbar({ title, sub, theme, setTheme, onLogout, ocultar, onToggleOculta
         <button className="icon-btn hide-mobile" onClick={() => setTheme(theme === "dark" ? "light" : "dark")} title="Mudar tema">
           <Icon name={theme === "dark" ? "sun" : "moon"} size={18} />
         </button>
-        <div className="topbar-userwrap" ref={wrapRef}>
+        <div className="topbar-userwrap hide-mobile" ref={wrapRef}>
           <button className="topbar-avatar" onClick={() => setMenu((v) => !v)} aria-haspopup="menu" aria-expanded={menu} title={nome}>
             <Avatar account={acc} size={36} />
           </button>
@@ -180,7 +184,7 @@ function Topbar({ title, sub, theme, setTheme, onLogout, ocultar, onToggleOculta
   );
 }
 
-function MobileMenu({ open, onClose, route, go, account, onLogout }) {
+function MobileMenu({ open, onClose, route, go, account, onLogout, theme, setTheme }) {
   const tr = useT();
   const fin = useFinance();
   const acc = account || fin.account || {};
@@ -245,6 +249,11 @@ function MobileMenu({ open, onClose, route, go, account, onLogout }) {
           {nav2.map(Item)}
           <div className="nav-label">Premium</div>
           {navPrem.map(Item)}
+          <div className="drawer-sep" />
+          <button className="dr-item" onClick={() => setTheme && setTheme(theme === "dark" ? "light" : "dark")}>
+            <Icon name={theme === "dark" ? "sun" : "moon"} size={20} />
+            <span>{theme === "dark" ? "Tema claro" : "Tema escuro"}</span>
+          </button>
         </nav>
         <div className={"drawer-acct" + (acctOpen ? " open" : "")}>
           <button className="drawer-acct-head" onClick={() => setAcctOpen((v) => !v)} aria-expanded={acctOpen}>
@@ -273,36 +282,30 @@ function MobileMenu({ open, onClose, route, go, account, onLogout }) {
   );
 }
 
-function MobileNav({ route, go, onMore }) {
+function MobileNav({ route, go, onAdd }) {
   const fin = useFinance();
   const acc = fin.account || {};
-  const tabs = [
-    { id: "dashboard", label: "Início", icon: "grid" },
-    { id: "despesas", label: "Despesas", icon: "card" },
-    { id: "rendimentos", label: "Receita", icon: "coins" },
-    { id: "perfil", label: "Perfil", icon: "user" },
-  ];
-  const moreRoutes = ["poupanca", "relatorios", "historico", "config", "subscricoes", "lembretes", "recorrentes", "partilha", "previsao", "premium"];
   const inicial = ((acc.nome || "").trim().charAt(0) || "?").toUpperCase();
+  const Tab = (t) => {
+    const on = route === t.id;
+    return (
+      <button key={t.id} className={"mtab" + (on ? " on" : "")} onClick={() => go(t.id)}>
+        {t.id === "perfil"
+          ? (acc.foto
+              ? <img src={acc.foto} alt="" className={"mtab-av" + (on ? " on" : "")} />
+              : <span className={"mtab-av mtab-av-ph" + (on ? " on" : "")}>{inicial}</span>)
+          : <Icon name={t.icon} size={21} sw={on ? 2.2 : 1.8} />}
+        <span>{t.label}</span>
+      </button>
+    );
+  };
   return (
     <nav className="mobilenav">
-      {tabs.map((t) => {
-        const on = route === t.id;
-        return (
-          <button key={t.id} className={"mtab" + (on ? " on" : "")} onClick={() => go(t.id)}>
-            {t.id === "perfil"
-              ? (acc.foto
-                  ? <img src={acc.foto} alt="" className={"mtab-av" + (on ? " on" : "")} />
-                  : <span className={"mtab-av mtab-av-ph" + (on ? " on" : "")}>{inicial}</span>)
-              : <Icon name={t.icon} size={21} sw={on ? 2.2 : 1.8} />}
-            <span>{t.label}</span>
-          </button>
-        );
-      })}
-      <button className={"mtab mtab-more" + (moreRoutes.includes(route) ? " on" : "")} onClick={onMore}>
-        <Icon name="dots" size={21} sw={2.4} />
-        <span>Mais</span>
-      </button>
+      {Tab({ id: "dashboard", label: "Início", icon: "grid" })}
+      {Tab({ id: "despesas", label: "Despesas", icon: "card" })}
+      <button className="mtab-fab" onClick={onAdd} aria-label="Adicionar"><Icon name="plus" size={26} color="#fff" sw={2.4} /></button>
+      {Tab({ id: "rendimentos", label: "Receita", icon: "coins" })}
+      {Tab({ id: "perfil", label: "Perfil", icon: "user" })}
     </nav>
   );
 }

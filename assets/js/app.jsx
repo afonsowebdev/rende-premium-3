@@ -482,7 +482,8 @@ function Shell() {
         {route === "premium" && <Paywall />}
       </div>
       {moreOpen && false && <span />}
-      <MobileMenu open={drawerOpen} onClose={() => setDrawerOpen(false)} route={route} go={go} account={fin.account} onLogout={fin.logout} />
+      <MobileNav route={route} go={go} onAdd={() => open(P.add || "despesa")} />
+      <MobileMenu open={drawerOpen} onClose={() => setDrawerOpen(false)} route={route} go={go} account={fin.account} onLogout={fin.logout} theme={theme} setTheme={setTheme} />
       {modal && <EntryModal type={modal.type} item={modal.item} onClose={() => setModal(null)} />}
       <LockGate active={!!fin.session} />
       {panel}

@@ -1332,3 +1332,49 @@ input.range::-moz-range-thumb { width: 19px; height: 19px; border-radius: 50%; b
 .drawer-acct-menu .dr-item { font-weight: 600; }
 
 body.drawer-lock { overflow: hidden; }
+
+/* ============================================================
+   RENDE+ · Topo mobile  ·  ☰ esquerda · logo centro · 🔔 direita
+   ============================================================ */
+.show-mobile { display: none; }
+.topbar-logo { align-items: center; border: none; background: none; padding: 4px 8px; border-radius: 10px; cursor: pointer; }
+.topbar-logo:hover { background: var(--surface-2); }
+
+@media (max-width: 860px) {
+  .menu-btn { display: inline-flex; }       /* <- faltava: mostra o hamburger */
+  .show-mobile { display: flex; }
+  .topbar { position: relative; }
+  .topbar-logo { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); }
+}
+
+/* ============================================================
+   RENDE+ · Ajustes mobile (barra inferior + fundo branco + espaço)
+   ============================================================ */
+/* barra inferior só no telemóvel — no desktop manda a sidebar */
+@media (min-width: 861px) {
+  .mobilenav { display: none; }
+  .main { padding-bottom: 0; }
+}
+
+/* "+" central da barra inferior */
+.mtab-fab {
+  flex: 0 0 auto; align-self: center; display: grid; place-items: center;
+  width: 54px; height: 54px; margin: -16px 8px 0; padding: 0;
+  border: none; border-radius: 50%; background: var(--accent); color: #fff; cursor: pointer;
+  box-shadow: 0 8px 20px -6px color-mix(in srgb, var(--accent) 62%, transparent), 0 2px 6px rgba(0, 0, 0, .12);
+  transition: transform .12s ease, background .15s ease;
+}
+.mtab-fab:hover { background: color-mix(in srgb, var(--accent) 90%, #000); }
+.mtab-fab:active { transform: scale(.95); }
+
+/* separador antes da linha de tema no drawer */
+.drawer-sep { height: 1px; background: var(--border); margin: 12px 8px; }
+
+@media (max-width: 860px) {
+  /* fundo branco e mais espaço ao conteúdo */
+  body, .app, .main, .content, .topbar { background: var(--surface); }
+  .content { padding: 22px 18px 40px; gap: 18px; }
+
+  /* remove a barra de ações (Nova despesa · mês · Mês atual) no telemóvel */
+  .page-actions { display: none !important; }
+}
