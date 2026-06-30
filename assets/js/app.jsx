@@ -454,7 +454,7 @@ function Shell() {
     <div className={"app" + (sbCollapsed ? " sb-collapsed" : "")}>
       <Sidebar route={route} go={go} account={fin.account} collapsed={sbCollapsed} onToggle={toggleSidebar} onLogout={fin.logout} />
       <div className="main">
-        <Topbar title={pageTitle} sub={PREM_PAGE[route] ? PREM_PAGE[route][1] : subByRoute[route]} theme={theme} setTheme={setTheme} onLogout={fin.logout}
+        <Topbar go={go} title={pageTitle} sub={PREM_PAGE[route] ? PREM_PAGE[route][1] : subByRoute[route]} theme={theme} setTheme={setTheme} onLogout={fin.logout}
           ocultar={ocultar} onToggleOcultar={toggleOcultar}
           onAdd={P.add ? () => open(P.add) : null} addLabel={P.add ? tr("add_" + P.add) : null}
           monthNav={showMonthNav ? <MonthNav label={fin.monthLabel} onPrev={() => fin.shiftMonth(-1)} onNext={() => fin.shiftMonth(1)}

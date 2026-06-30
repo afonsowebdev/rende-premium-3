@@ -117,17 +117,38 @@ function MonthNav({ label, onPrev, onNext, canNext = true, isCurrent, onToday })
   );
 }
 
-function Topbar({ title, sub, theme, setTheme, onLogout, onAdd, addLabel, monthNav, ocultar, onToggleOcultar }) {
+function Topbar({ title, sub, theme, setTheme, onLogout, onAdd, addLabel, monthNav, ocultar, onToggleOcultar, go }) {
   const tr = useT();
+  const fin = useFinance();
+  const acc = fin.account || {};
+  const nome = acc.nome || "Conta";
+  const iniciais = (nome.split(" ").filter(Boolean).slice(0, 2).map((w) => w[0]).join("") || "R").toUpperCase();
+  const [menu, setMenu] = React.useState(false);
+  const wrapRef = React.useRef(null);
+  React.useEffect(() => {
+    if (!menu) return;
+    const fora = (e) => { if (wrapRef.current && !wrapRef.current.contains(e.target)) setMenu(false); };
+    const esc = (e) => { if (e.key === "Escape") setMenu(false); };
+    document.addEventListener("mousedown", fora);
+    document.addEventListener("keydown", esc);
+    return () => { document.removeEventListener("mousedown", fora); document.removeEventListener("keydown", esc); };
+  }, [menu]);
   return (
     <div className="topbar">
-      <div className="row" style={{ gap: 11, minWidth: 0 }}>
+      <div className="row topbar-left" style={{ gap: 11, minWidth: 0 }}>
         <div className="mobile-brand brand-mark" style={{ width: 34, height: 34, borderRadius: 10 }}><span className="brand-mark-txt" style={{ fontSize: 17 }}>R</span></div>
-        <div style={{ minWidth: 0 }}>
+        <div className="topbar-title hide-mobile" style={{ minWidth: 0 }}>
           <h1 className="page-title">{title}</h1>
           {sub && <p className="page-sub">{sub}</p>}
         </div>
       </div>
+
+      <div className="topbar-search hide-mobile">
+        <Icon name="search" size={18} color="var(--ink-3)" />
+        <input placeholder="Pesquisar transações, categorias…" aria-label="Pesquisar" />
+        <span className="kbd">⌘ K</span>
+      </div>
+
       <div className="topbar-actions">
         {monthNav}
         {onAdd && (
@@ -135,7 +156,6 @@ function Topbar({ title, sub, theme, setTheme, onLogout, onAdd, addLabel, monthN
             <Icon name="plus" size={16} color="#fff" /> <span className="hide-mobile">{addLabel || tr("add_generic")}</span>
           </button>
         )}
-        <NotifBell />
         {onToggleOcultar && (
           <button className="icon-btn" onClick={onToggleOcultar} title={ocultar ? "Mostrar valores" : "Ocultar valores"} aria-pressed={ocultar}>
             <Icon name={ocultar ? "eyeOff" : "eye"} size={18} />
@@ -144,6 +164,31 @@ function Topbar({ title, sub, theme, setTheme, onLogout, onAdd, addLabel, monthN
         <button className="icon-btn hide-mobile" onClick={() => setTheme(theme === "dark" ? "light" : "dark")} title={tr("theme_title")}>
           <Icon name={theme === "dark" ? "sun" : "moon"} size={18} />
         </button>
+        <NotifBell />
+        <div className="topbar-userwrap" ref={wrapRef}>
+          <button className="topbar-user" onClick={() => setMenu((v) => !v)} aria-haspopup="menu" aria-expanded={menu} title={nome}>
+            <span className="tu-name hide-mobile">{nome}</span>
+            <span className={"tu-chev hide-mobile" + (menu ? " open" : "")}><Icon name="chevR" size={14} color="var(--ink-3)" /></span>
+            <span className="user-av tu-av">{iniciais}</span>
+          </button>
+          {menu && (
+            <div className="user-menu" role="menu">
+              <div className="user-menu-head">
+                <span className="user-av" style={{ width: 38, height: 38 }}>{iniciais}</span>
+                <div style={{ minWidth: 0 }}>
+                  <div className="um-name">{nome}</div>
+                  {acc.email && <div className="um-mail">{acc.email}</div>}
+                </div>
+              </div>
+              <button className="user-menu-item" role="menuitem" onClick={() => { setMenu(false); go && go("perfil"); }}>
+                <Icon name="user" size={17} /> Perfil
+              </button>
+              <button className="user-menu-item danger" role="menuitem" onClick={() => { setMenu(false); onLogout && onLogout(); }}>
+                <Icon name="logout" size={17} /> Terminar sessão
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

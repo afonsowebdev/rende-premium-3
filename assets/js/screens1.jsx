@@ -356,17 +356,15 @@ function Dashboard({ go, open }) {
 
   return (
     <div className="content">
-      <div className="grid kpi5" style={{ gridTemplateColumns: "repeat(5,1fr)" }}>
+      <div className="grid kpi4" style={{ gridTemplateColumns: "repeat(4,1fr)" }}>
         <Kpi label="Saldo atual" value={BM.eur(fin.saldo)} icon="wallet" color="var(--accent)" delta={dSaldo == null ? null : deltaTxt(dSaldo)} deltaDir={dSaldo < 0 ? "down" : "up"} />
         <Kpi label={tr("kpi_received")} value={BM.eur(fin.totalRec)} icon="coins" color="var(--pos)" delta={dRec == null ? null : deltaTxt(dRec)} deltaDir={dRec < 0 ? "down" : "up"} onClick={() => setDetalhe("rec")} />
         <Kpi label={tr("kpi_spent")} value={BM.eur(fin.totalGasto)} icon="cart" color="var(--neg)" delta={dGasto == null ? null : deltaTxt(dGasto)} deltaDir={dGasto < 0 ? "down" : "up"} onClick={() => setDetalhe("gasto")} />
         <Kpi label="Poupança do mês" value={BM.eur(fin.poupado)} icon="trend" color="var(--c-educacao)" delta={dSaldo == null ? null : deltaTxt(dSaldo)} deltaDir={dSaldo < 0 ? "down" : "up"} />
-        <Kpi label="Metas concluídas" value={metasDone + " / " + metasAll.length} icon="target" color="var(--warn)"
-          sub={<><div style={{ marginBottom: 8 }}>{metasPct}% do total</div><Progress value={metasDone} max={Math.max(metasAll.length, 1)} color="var(--warn)" /></>} />
       </div>
       {detalhe && <KpiDetalheModal tipo={detalhe === "gasto" ? "gasto" : "rec"} fin={fin} onClose={() => setDetalhe(null)} />}
 
-      <div className="grid dash-mid" style={{ gridTemplateColumns: "1.5fr 1.25fr 1fr" }}>
+      <div className="grid dash-mid" style={{ gridTemplateColumns: "1.6fr 1fr" }}>
         <div className="card card-pad">
           <div className="section-head" style={{ marginBottom: 14 }}>
             <div className="section-title">{tr("dash_evolution")}</div>
@@ -400,26 +398,6 @@ function Dashboard({ go, open }) {
               </div>
             </div>
           )}
-        </div>
-
-        <div className="card card-pad">
-          <div className="section-head" style={{ marginBottom: 6 }}><div className="section-title">As minhas metas</div>
-            <button className="btn btn-soft" style={{ padding: "5px 10px" }} onClick={() => go("poupanca")}>{tr("see_all")}</button>
-          </div>
-          {metasAll.length === 0 ? <div className="muted tiny" style={{ fontWeight: 600, padding: "16px 0" }}>{tr("goals_empty")}</div> :
-            metasAll.slice(0, 4).map((m) => {
-              const pct = Math.min(100, Math.round((m.atual / m.alvo) * 100));
-              return (
-                <div key={m.id} style={{ padding: "11px 0", borderTop: "1px solid var(--border)" }}>
-                  <div className="row" style={{ justifyContent: "space-between", marginBottom: 6 }}>
-                    <span style={{ fontWeight: 700, fontSize: 13.5 }}>{m.nome}</span>
-                    <span className="tnum tiny" style={{ fontWeight: 800 }}>{pct}%</span>
-                  </div>
-                  <div className="tnum tiny muted" style={{ fontWeight: 600, marginBottom: 7 }}>{BM.eur0(m.atual)} / {BM.eur0(m.alvo)}</div>
-                  <Progress value={m.atual} max={m.alvo} color={m.cor} />
-                </div>
-              );
-            })}
         </div>
       </div>
 
