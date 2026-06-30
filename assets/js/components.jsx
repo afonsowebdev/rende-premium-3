@@ -85,12 +85,6 @@ function Sidebar({ route, go, account, collapsed, onToggle, onLogout }) {
       <div className="nav-label row" style={{ justifyContent: "space-between", paddingRight: 4 }}>Premium <PremiumBadge /></div>
       {navPrem.map(Item)}
       <div className="sidebar-foot">
-        {onLogout && (
-          <button className="nav-item" onClick={onLogout} title={tr("logout_short")}>
-            <Icon name="logout" size={19} />
-            <span>{tr("logout_full")}</span>
-          </button>
-        )}
         <button className="nav-item sb-toggle" onClick={onToggle} title={collapsed ? tr("sb_expand") : tr("sb_collapse")}>
           <span style={{ display: "grid", transform: collapsed ? "rotate(180deg)" : "none" }}><Icon name="collapse" size={19} /></span>
           <span>{collapsed ? tr("sb_expand") : tr("sb_collapse")}</span>
@@ -117,8 +111,20 @@ function MonthNav({ label, onPrev, onNext, canNext = true, isCurrent, onToday })
   );
 }
 
-function Topbar({ title, sub, theme, setTheme, onLogout, onAdd, addLabel, monthNav, ocultar, onToggleOcultar }) {
-  const tr = useT();
+function Topbar({ title, sub, theme, setTheme, onLogout, ocultar, onToggleOcultar, go }) {
+  const fin = useFinance();
+  const acc = fin.account || {};
+  const nome = acc.nome || "Conta";
+  const [menu, setMenu] = React.useState(false);
+  const wrapRef = React.useRef(null);
+  React.useEffect(() => {
+    if (!menu) return;
+    const fora = (e) => { if (wrapRef.current && !wrapRef.current.contains(e.target)) setMenu(false); };
+    const esc = (e) => { if (e.key === "Escape") setMenu(false); };
+    document.addEventListener("mousedown", fora);
+    document.addEventListener("keydown", esc);
+    return () => { document.removeEventListener("mousedown", fora); document.removeEventListener("keydown", esc); };
+  }, [menu]);
   return (
     <div className="topbar">
       <div className="row topbar-left" style={{ gap: 11, minWidth: 0 }}>
@@ -129,12 +135,6 @@ function Topbar({ title, sub, theme, setTheme, onLogout, onAdd, addLabel, monthN
         </div>
       </div>
       <div className="topbar-actions">
-        {monthNav}
-        {onAdd && (
-          <button className="btn btn-primary" onClick={onAdd}>
-            <Icon name="plus" size={16} color="#fff" /> <span className="hide-mobile">{addLabel || tr("add_generic")}</span>
-          </button>
-        )}
         {onToggleOcultar && (
           <button className="icon-btn" onClick={onToggleOcultar} title={ocultar ? "Mostrar valores" : "Ocultar valores"} aria-pressed={ocultar}>
             <Icon name={ocultar ? "eyeOff" : "eye"} size={18} />
@@ -144,11 +144,32 @@ function Topbar({ title, sub, theme, setTheme, onLogout, onAdd, addLabel, monthN
         <button className="icon-btn hide-mobile" onClick={() => setTheme(theme === "dark" ? "light" : "dark")} title="Mudar tema">
           <Icon name={theme === "dark" ? "sun" : "moon"} size={18} />
         </button>
-        {onLogout && (
-          <button className="icon-btn" onClick={onLogout} title="Terminar sessão">
-            <Icon name="logout" size={18} />
+        <div className="topbar-userwrap" ref={wrapRef}>
+          <button className="topbar-avatar" onClick={() => setMenu((v) => !v)} aria-haspopup="menu" aria-expanded={menu} title={nome}>
+            <Avatar account={acc} size={36} />
           </button>
-        )}
+          {menu && (
+            <div className="user-menu" role="menu">
+              <div className="user-menu-head">
+                <Avatar account={acc} size={40} />
+                <div style={{ minWidth: 0 }}>
+                  <div className="um-name">{nome}</div>
+                  {acc.email && <div className="um-mail">{acc.email}</div>}
+                </div>
+              </div>
+              <button className="user-menu-item" role="menuitem" onClick={() => { setMenu(false); go && go("perfil"); }}>
+                <Icon name="user" size={17} /> Perfil
+              </button>
+              <button className="user-menu-item" role="menuitem" onClick={() => { setMenu(false); go && go("config"); }}>
+                <Icon name="gear" size={17} /> Definições
+              </button>
+              <div className="user-menu-sep" />
+              <button className="user-menu-item danger" role="menuitem" onClick={() => { setMenu(false); onLogout && onLogout(); }}>
+                <Icon name="logout" size={17} /> Terminar sessão
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

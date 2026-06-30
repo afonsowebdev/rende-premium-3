@@ -1222,3 +1222,13 @@ input.range::-moz-range-thumb { width: 19px; height: 19px; border-radius: 50%; b
 /* Cabeçalho estilo free: título à esquerda, ações à direita */
 .topbar { justify-content: space-between; }
 .topbar-title .page-title { font-size: 22px; }
+
+/* ============================================================
+   RENDE+ · Avatar no cabeçalho + barra de ações no corpo
+   ============================================================ */
+.topbar-avatar { background: none; border: none; padding: 0; cursor: pointer; border-radius: 50%; display: grid; place-items: center; transition: box-shadow .15s; }
+.topbar-avatar:hover { box-shadow: 0 0 0 3px var(--surface-2); }
+.user-menu-sep { height: 1px; background: var(--border); margin: 6px 4px; }
+
+.page-actions { display: flex; justify-content: flex-end; align-items: center; gap: 12px; flex-wrap: wrap; padding: 20px 32px 0; }
+@media (max-width: 560px){ .page-actions { padding: 14px 16px 0; } }

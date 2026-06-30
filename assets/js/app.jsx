@@ -456,10 +456,14 @@ function Shell() {
       <Sidebar route={route} go={go} account={fin.account} collapsed={sbCollapsed} onToggle={toggleSidebar} onLogout={fin.logout} />
       <div className="main">
         <Topbar go={go} title={pageTitle} sub={PREM_PAGE[route] ? PREM_PAGE[route][1] : subByRoute[route]} theme={theme} setTheme={setTheme} onLogout={fin.logout}
-          ocultar={ocultar} onToggleOcultar={toggleOcultar}
-          onAdd={P.add ? () => open(P.add) : null} addLabel={P.add ? tr("add_" + P.add) : null}
-          monthNav={showMonthNav ? <MonthNav label={fin.monthLabel} onPrev={() => fin.shiftMonth(-1)} onNext={() => fin.shiftMonth(1)}
-            canNext={!fin.isCurrentMonth} isCurrent={fin.isCurrentMonth} onToday={fin.goToday} /> : null} />
+          ocultar={ocultar} onToggleOcultar={toggleOcultar} />
+        {(showMonthNav || P.add) && (
+          <div className="page-actions">
+            {showMonthNav && <MonthNav label={fin.monthLabel} onPrev={() => fin.shiftMonth(-1)} onNext={() => fin.shiftMonth(1)}
+              canNext={!fin.isCurrentMonth} isCurrent={fin.isCurrentMonth} onToday={fin.goToday} />}
+            {P.add && <button className="btn btn-primary" onClick={() => open(P.add)}><Icon name="plus" size={16} color="#fff" /> {tr("add_" + P.add)}</button>}
+          </div>
+        )}
         {route === "dashboard" && <Dashboard go={go} open={open} />}
         {route === "despesas" && <Despesas open={open} />}
         {route === "rendimentos" && <Rendimentos open={open} />}
