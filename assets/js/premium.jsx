@@ -599,6 +599,7 @@ function PartilhaInner() {
   const [openId, setOpenId] = React.useState(null);
   const [tab, setTab] = React.useState("dashboard");
   const [anexoView, setAnexoView] = React.useState(null);
+  const [remMembro, setRemMembro] = React.useState(null);
   const [delId, setDelId] = React.useState(null);
   const [convEmail, setConvEmail] = React.useState("");
   const aberto = grupos.find((g) => g.id === openId);
@@ -617,6 +618,8 @@ function PartilhaInner() {
     })();
     const proximas = (aberto.despesas || []).filter((e) => e.vencimento).sort((a, b) => (a.vencimento || "").localeCompare(b.vencimento || "")).slice(0, 5);
     const convidar = () => { const v = convEmail.trim().toLowerCase(); if (!/^\S+@\S+\.\S+$/.test(v)) return; const nm = nomeDeEmail(v); if (!(aberto.membros || []).includes(nm)) prem.edit("grupos", aberto.id, { membros: [...(aberto.membros || []), nm], convites: [...(aberto.convites || []), { email: v, nome: nm, estado: "pendente" }] }); setConvEmail(""); };
+    const setPapel = (nome, papel) => prem.edit("grupos", aberto.id, { papeis: { ...(aberto.papeis || {}), [nome]: papel } });
+    const removerMembro = (nome) => { const p = { ...(aberto.papeis || {}) }; delete p[nome]; prem.edit("grupos", aberto.id, { membros: (aberto.membros || []).filter((m) => m !== nome), convites: (aberto.convites || []).filter((c) => c.nome !== nome), papeis: p }); };
     const kpis = [
       { lbl: "Total de despesas", val: BM.eur(stats.total), sub: "total do grupo", ic: "wallet", c: "#14a06b" },
       { lbl: "Total pago", val: BM.eur(stats.totalPago), sub: pctPago + "% liquidado", ic: "check", c: "#3b82f6" },
@@ -785,33 +788,43 @@ function PartilhaInner() {
         )}
 
         {tab === "membros" && (
-          <div className="card card-pad">
-            <div className="prem-sec-t">Membros</div>
-            <div className="prem-balrow">
-              <span className="prem-avatar">Eu</span>
-              <span style={{ flex: 1, fontWeight: 700 }}>Eu <span className="muted tiny" style={{ fontWeight: 600 }}>(tu · Owner)</span></span>
-              <span className="prem-bal-tag zero">ativo</span>
+          <div className="pg-col">
+            <div className="card card-pad">
+              <div className="pg-sec-h"><div className="prem-sec-t">Membros ({pessoas.length})</div></div>
+              <div className="pg-mrow">
+                <span className="prem-avatar">Eu</span>
+                <div className="pg-mrow-txt"><b>Eu <span className="muted tiny" style={{ fontWeight: 600 }}>(tu)</span></b><span className="pg-mrow-sub">criador do grupo</span></div>
+                <span className="pg-role owner">Owner</span>
+              </div>
+              {(aberto.membros || []).map((m) => {
+                const conv = (aberto.convites || []).find((c) => c.nome === m);
+                const pendm = conv && conv.estado === "pendente";
+                const papel = (aberto.papeis && aberto.papeis[m]) || "membro";
+                return (
+                  <div className="pg-mrow" key={m}>
+                    <span className="prem-avatar">{inicial(m)}</span>
+                    <div className="pg-mrow-txt"><b>{m}</b><span className="pg-mrow-sub">{conv ? conv.email : ""}{pendm ? " · convite pendente" : ""}</span></div>
+                    {pendm
+                      ? <button className="btn btn-soft" style={{ padding: "5px 11px" }} onClick={() => prem.edit("grupos", aberto.id, { convites: (aberto.convites || []).map((c) => (c.nome === m ? { ...c, estado: "ativo" } : c)) })}>Aceitar</button>
+                      : <select className="select pg-role-sel" value={papel} onChange={(e) => setPapel(m, e.target.value)}><option value="admin">Admin</option><option value="membro">Membro</option></select>}
+                    <button className="icon-btn" title="Remover membro" onClick={() => setRemMembro(m)}><Icon name="trash" size={15} color="var(--neg)" /></button>
+                  </div>
+                );
+              })}
+              <div className="row" style={{ gap: 8, marginTop: 12 }}>
+                <input className="input" type="email" value={convEmail} onChange={(e) => setConvEmail(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); convidar(); } }}
+                  placeholder="convidar por email…" />
+                <button className="btn btn-primary" style={{ flex: "none" }} onClick={convidar}><Icon name="plus" size={14} color="#fff" /> Convidar</button>
+              </div>
             </div>
-            {(aberto.membros || []).map((m) => {
-              const conv = (aberto.convites || []).find((c) => c.nome === m);
-              const pendm = conv && conv.estado === "pendente";
-              return (
-                <div className="prem-balrow" key={m}>
-                  <span className="prem-avatar">{inicial(m)}</span>
-                  <span style={{ flex: 1, fontWeight: 700 }}>{m}{conv ? <span className="muted tiny" style={{ fontWeight: 600 }}> · {conv.email}</span> : null}</span>
-                  {pendm
-                    ? <button className="btn btn-soft" style={{ padding: "4px 10px" }} onClick={() => prem.edit("grupos", aberto.id, { convites: (aberto.convites || []).map((c) => (c.nome === m ? { ...c, estado: "ativo" } : c)) })}>Aceitar convite</button>
-                    : <span className="prem-bal-tag zero">ativo</span>}
-                </div>
-              );
-            })}
-            <div className="row" style={{ gap: 8, marginTop: 12 }}>
-              <input className="input" type="email" value={convEmail} onChange={(e) => setConvEmail(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); convidar(); } }}
-                placeholder="convidar por email…" />
-              <button className="btn btn-primary" style={{ flex: "none" }} onClick={convidar}><Icon name="plus" size={14} color="#fff" /> Convidar</button>
+            <div className="card card-pad">
+              <div className="prem-sec-t">Como funcionam as permissões</div>
+              <div className="pg-perm"><span className="pg-role owner">Owner</span><span>Controlo total: gere membros, permissões e o grupo.</span></div>
+              <div className="pg-perm"><span className="pg-role admin">Admin</span><span>Pode adicionar despesas e convidar membros.</span></div>
+              <div className="pg-perm"><span className="pg-role membro">Membro</span><span>Participa nas despesas e vê os saldos.</span></div>
+              <div className="muted tiny" style={{ fontWeight: 600, marginTop: 10, lineHeight: 1.6 }}>És o Owner deste grupo. As permissões aplicam-se de verdade entre vários utilizadores quando o backend estiver ligado — aqui é simulação local. Ao remover um membro, as despesas já registadas mantêm-se no histórico.</div>
             </div>
-            <div className="muted tiny" style={{ fontWeight: 600, marginTop: 8, lineHeight: 1.6 }}>Permissões (Owner / Admin / Membro) e o convite real por email chegam na <b>Fase 3</b>. Aqui é simulação local.</div>
           </div>
         )}
 
@@ -832,6 +845,12 @@ function PartilhaInner() {
 
         {despModal && <DespesaPartilhadaModal grupo={aberto} onClose={() => setDespModal(null)} onSave={(d) => { prem.edit("grupos", aberto.id, { despesas: [...(aberto.despesas || []), d] }); setDespModal(null); }} />}
         {anexoView && <AnexoViewer anexo={anexoView} onClose={() => setAnexoView(null)} />}
+        {remMembro && (
+          <Modal title="Remover membro" onClose={() => setRemMembro(null)}
+            footer={<><button className="btn btn-ghost" onClick={() => setRemMembro(null)}>Cancelar</button><button className="btn" style={{ background: "var(--neg)", color: "#fff", border: "none" }} onClick={() => { removerMembro(remMembro); setRemMembro(null); }}><Icon name="trash" size={14} color="#fff" /> Remover</button></>}>
+            <div className="muted" style={{ fontSize: 13.5, fontWeight: 500, lineHeight: 1.6 }}>Remover <b>{remMembro}</b> do grupo? As despesas já registadas mantêm-se no histórico.</div>
+          </Modal>
+        )}
       </div>
     );
   }
