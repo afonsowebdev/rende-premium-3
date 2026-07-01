@@ -1329,16 +1329,89 @@ const SUB_CATALOGO = [
   { nome: "Amazon Prime", icon: "bag", color: "#00a8e1", valor: 4.99 },
 ];
 
-function SubModal({ mesAtual, onClose, onSave }) {
-  const [base, setBase] = React.useState(null); // null = ainda a escolher do catálogo
-  const [f, setF] = React.useState({ nome: "", valor: "", dia: 1, icon: "tv", color: "var(--accent)" });
+/* Categorias de subscrição (nome + cor para o donut e etiquetas) */
+const SUB_CATS = {
+  entretenimento: { nome: "Entretenimento", color: "#e5484d" },
+  musica: { nome: "Música", color: "#1db954" },
+  cloud: { nome: "Cloud", color: "#3693f3" },
+  produtividade: { nome: "Produtividade", color: "#d83b01" },
+  jogos: { nome: "Jogos", color: "#0070d1" },
+  educacao: { nome: "Educação", color: "#a855f7" },
+  compras: { nome: "Compras", color: "#f0913a" },
+  outros: { nome: "Outros", color: "#787880" },
+};
+const ICON_CAT = { film: "entretenimento", tv: "entretenimento", music: "musica", wifi: "cloud", briefcase: "produtividade", spark: "produtividade", game: "jogos", bag: "compras" };
+function subCat(s) { return s.categoria || ICON_CAT[s.icon] || "outros"; }
+function subCatMeta(c) { return SUB_CATS[c] || SUB_CATS.outros; }
+function cicloLabel(c) { return { mensal: "Mensal", anual: "Anual", semanal: "Semanal" }[c || "mensal"]; }
+function mensalDe(s) { const v = +s.valor || 0, c = s.ciclo || "mensal"; return c === "anual" ? v / 12 : c === "semanal" ? v * 52 / 12 : v; }
+function anualDe(s) { const v = +s.valor || 0, c = s.ciclo || "mensal"; return c === "anual" ? v : c === "semanal" ? v * 52 : v * 12; }
+function subEstado(s) { return s.estado || "ativa"; }
+const SUB_ESTADOS = { ativa: { l: "Ativa", cls: "on" }, trial: { l: "Trial", cls: "trial" }, pausada: { l: "Pausada", cls: "pausa" }, cancelada: { l: "Cancelada", cls: "canc" } };
+function proxRenovDate(s) { const h = new Date(); const dia = Math.min(28, Math.max(1, +s.dia || 1)); let d = new Date(h.getFullYear(), h.getMonth(), dia); const hj = new Date(h.getFullYear(), h.getMonth(), h.getDate()); if (d < hj) d = new Date(h.getFullYear(), h.getMonth() + 1, dia); return d; }
+function diasAte(d) { const h = new Date(); return Math.round((d - new Date(h.getFullYear(), h.getMonth(), h.getDate())) / 86400000); }
+function subEstadoPill(s) { const e = SUB_ESTADOS[subEstado(s)] || SUB_ESTADOS.ativa; return <span className={"sub-estado " + e.cls}>{e.l}</span>; }
+
+function SubCalendario({ subs }) {
+  const hoje = new Date();
+  const [ref, setRef] = React.useState({ y: hoje.getFullYear(), m: hoje.getMonth() });
+  const ativos = (subs || []).filter((s) => subEstado(s) === "ativa" || subEstado(s) === "trial");
+  const first = new Date(ref.y, ref.m, 1);
+  const startDow = (first.getDay() + 6) % 7;
+  const dias = new Date(ref.y, ref.m + 1, 0).getDate();
+  const byDay = {};
+  ativos.forEach((s) => { const d = Math.min(dias, Math.min(28, Math.max(1, +s.dia || 1))); (byDay[d] = byDay[d] || []).push(s); });
+  const cells = [];
+  for (let i = 0; i < startDow; i++) cells.push(null);
+  for (let d = 1; d <= dias; d++) cells.push(d);
+  const shift = (delta) => setRef((r) => { let m = r.m + delta, y = r.y; if (m < 0) { m = 11; y--; } if (m > 11) { m = 0; y++; } return { y, m }; });
+  const isHoje = (d) => hoje.getFullYear() === ref.y && hoje.getMonth() === ref.m && hoje.getDate() === d;
+  const listaDias = Object.keys(byDay).map(Number).sort((a, b) => a - b);
+  return (
+    <div className="card card-pad">
+      <div className="pg-cal-head">
+        <button className="pg-back" onClick={() => shift(-1)} title="Mês anterior"><span style={{ display: "grid", transform: "rotate(180deg)" }}><Icon name="chevR" size={15} /></span></button>
+        <b style={{ fontSize: 15 }}>{BM.MESES[ref.m]} {ref.y}</b>
+        <button className="pg-back" onClick={() => shift(1)} title="Mês seguinte"><Icon name="chevR" size={15} /></button>
+      </div>
+      <div className="pg-cal-grid pg-cal-dow">{["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"].map((d) => <span key={d}>{d}</span>)}</div>
+      <div className="pg-cal-grid">
+        {cells.map((d, i) => (
+          <div key={i} className={"pg-cal-cell" + (d ? "" : " empty") + (d && isHoje(d) ? " hoje" : "") + (d && byDay[d] ? " tem" : "")}>
+            {d && <span className="pg-cal-d">{d}</span>}
+            {d && byDay[d] && <span className="pg-cal-dot">{byDay[d].length}</span>}
+          </div>
+        ))}
+      </div>
+      {listaDias.length === 0 ? <div className="muted tiny" style={{ fontWeight: 600, marginTop: 12 }}>Sem renovações neste mês.</div> :
+        <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 2 }}>
+          {listaDias.map((d) => byDay[d].map((s) => (
+            <div className="pg-up" key={s.id + "-" + d}>
+              <div className="pg-up-d"><div className="dd">{d}</div><div className="mm">{BM.MESES[ref.m].slice(0, 3)}</div></div>
+              <span className="prem-rico sm" style={{ background: "color-mix(in srgb, " + (s.color || "var(--accent)") + " 14%, transparent)" }}><Icon name={s.icon || "tv"} size={15} color={s.color || "var(--accent)"} /></span>
+              <div className="pg-up-main"><div className="pg-up-t">{s.nome}</div><div className="pg-up-m">{subCatMeta(subCat(s)).nome} · {cicloLabel(s.ciclo)}</div></div>
+              <div className="pg-up-v">{BM.eur(s.valor)}</div>
+            </div>
+          )))}
+        </div>}
+    </div>
+  );
+}
+
+function SubModal({ mesAtual, sub, onClose, onSave }) {
+  const editing = !!sub;
+  const [base, setBase] = React.useState(editing ? { nome: sub.nome } : null); // null = ainda a escolher do catálogo
+  const [f, setF] = React.useState(editing
+    ? { nome: sub.nome || "", valor: String(sub.valor).replace(".", ","), dia: sub.dia || 1, icon: sub.icon || "tv", color: sub.color || "var(--accent)", ciclo: sub.ciclo || "mensal", categoria: subCat(sub), metodo: sub.metodo || "", estado: sub.estado || "ativa" }
+    : { nome: "", valor: "", dia: 1, icon: "tv", color: "var(--accent)", ciclo: "mensal", categoria: "outros", metodo: "", estado: "ativa" });
   const [err, setErr] = React.useState("");
-  const escolher = (c) => { setBase(c); setF({ nome: c.nome, valor: String(c.valor).replace(".", ","), dia: 1, icon: c.icon, color: c.color }); setErr(""); };
-  const outra = () => { setBase({ nome: "" }); setF({ nome: "", valor: "", dia: 1, icon: "spark", color: "var(--accent)" }); setErr(""); };
+  const escolher = (c) => { setBase(c); setF({ nome: c.nome, valor: String(c.valor).replace(".", ","), dia: 1, icon: c.icon, color: c.color, ciclo: "mensal", categoria: ICON_CAT[c.icon] || "outros", metodo: "", estado: "ativa" }); setErr(""); };
+  const outra = () => { setBase({ nome: "" }); setF({ nome: "", valor: "", dia: 1, icon: "spark", color: "var(--accent)", ciclo: "mensal", categoria: "outros", metodo: "", estado: "ativa" }); setErr(""); };
+  const upd = (k) => (e) => setF((s) => ({ ...s, [k]: e.target.value }));
   const guardar = () => {
     if (!f.nome.trim()) return setErr("Dá um nome à subscrição.");
     if (numOf(f.valor) <= 0) return setErr("Indica um valor válido.");
-    onSave({ nome: f.nome.trim(), valor: numOf(f.valor), dia: Math.min(28, Math.max(1, +f.dia || 1)), icon: f.icon, color: f.color, desde: mesAtual });
+    onSave({ nome: f.nome.trim(), valor: numOf(f.valor), dia: Math.min(28, Math.max(1, +f.dia || 1)), icon: f.icon, color: f.color, ciclo: f.ciclo, categoria: f.categoria, metodo: f.metodo.trim(), estado: f.estado, desde: editing ? sub.desde : mesAtual });
   };
 
   if (base === null) {
@@ -1363,13 +1436,21 @@ function SubModal({ mesAtual, onClose, onSave }) {
   }
 
   return (
-    <Modal title={base.nome || "Nova subscrição"} onClose={onClose}
-      footer={<><button className="btn btn-ghost" onClick={() => setBase(null)}>Voltar</button><button className="btn btn-primary" onClick={guardar}><Icon name="check" size={14} color="#fff" /> Adicionar</button></>}>
+    <Modal title={editing ? "Editar subscrição" : (base.nome || "Nova subscrição")} onClose={onClose}
+      footer={<><button className="btn btn-ghost" onClick={() => (editing ? onClose() : setBase(null))}>{editing ? "Cancelar" : "Voltar"}</button><button className="btn btn-primary" onClick={guardar}><Icon name="check" size={14} color="#fff" /> {editing ? "Guardar" : "Adicionar"}</button></>}>
       <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-        <Field label="Nome"><input className="input" autoFocus value={f.nome} onChange={(e) => setF((s) => ({ ...s, nome: e.target.value }))} placeholder="Ex: Netflix" /></Field>
+        <Field label="Nome"><input className="input" autoFocus value={f.nome} onChange={upd("nome")} placeholder="Ex: Netflix" /></Field>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-          <Field label="Valor / mês" hint="Ajusta ao teu plano."><input className="input" inputMode="decimal" value={f.valor} onChange={(e) => setF((s) => ({ ...s, valor: e.target.value }))} placeholder="0,00" /></Field>
-          <Field label="Dia de pagamento"><input className="input" type="number" min="1" max="28" value={f.dia} onChange={(e) => setF((s) => ({ ...s, dia: e.target.value }))} /></Field>
+          <Field label="Valor" hint="Ajusta ao teu plano."><input className="input" inputMode="decimal" value={f.valor} onChange={upd("valor")} placeholder="0,00" /></Field>
+          <Field label="Ciclo de cobrança"><select className="select" value={f.ciclo} onChange={upd("ciclo")}><option value="mensal">Mensal</option><option value="anual">Anual</option><option value="semanal">Semanal</option></select></Field>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          <Field label="Categoria"><select className="select" value={f.categoria} onChange={upd("categoria")}>{Object.keys(SUB_CATS).map((k) => <option key={k} value={k}>{SUB_CATS[k].nome}</option>)}</select></Field>
+          <Field label="Dia de renovação"><input className="input" type="number" min="1" max="28" value={f.dia} onChange={upd("dia")} /></Field>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          <Field label="Método de pagamento" hint="opcional"><input className="input" value={f.metodo} onChange={upd("metodo")} placeholder="Ex: Visa •• 42" /></Field>
+          <Field label="Estado"><select className="select" value={f.estado} onChange={upd("estado")}><option value="ativa">Ativa</option><option value="trial">Trial (período gratuito)</option><option value="pausada">Pausada</option><option value="cancelada">Cancelada</option></select></Field>
         </div>
         {err && <div className="alert bad" style={{ padding: "9px 12px" }}><Icon name="info" size={16} color="var(--neg)" /><span style={{ fontSize: 12.5, fontWeight: 700 }}>{err}</span></div>}
       </div>
@@ -1378,76 +1459,217 @@ function SubModal({ mesAtual, onClose, onSave }) {
 }
 
 function Subscricoes() { return <PremiumGate><SubscricoesInner /></PremiumGate>; }
+
+function SubSkeleton() {
+  return (
+    <>
+      <div className="ph-kpis sub-kpis">{[0, 1, 2, 3, 4].map((i) => <div className="pg-kpi sk" key={i}><div className="sk-box" style={{ width: 34, height: 34, borderRadius: 10 }} /><div className="sk-line" style={{ width: "60%", height: 20, marginTop: 12 }} /><div className="sk-line" style={{ width: "80%", height: 11, marginTop: 8 }} /></div>)}</div>
+      <div className="ph-layout">
+        <div className="ph-main"><div className="card" style={{ padding: 16 }}>{[0, 1, 2, 3, 4].map((i) => <div className="sk-row" key={i}><div className="sk-box" style={{ width: 30, height: 30, borderRadius: 9 }} /><div className="sk-line" style={{ flex: 1, height: 13 }} /><div className="sk-line" style={{ width: 60, height: 13 }} /></div>)}</div></div>
+        <div className="ph-aside"><div className="card card-pad" style={{ display: "grid", placeItems: "center", minHeight: 200 }}><div className="sk-box" style={{ width: 160, height: 160, borderRadius: "50%" }} /></div></div>
+      </div>
+    </>
+  );
+}
+
 function SubscricoesInner() {
   const fin = useFinance();
   const prem = usePremium();
-  const mes = fin.month; // "AAAA-MM" — o mês selecionado no topo
+  const mes = fin.month;
   const todas = prem.get().subscricoes || [];
   const pagos = prem.get().pagosSub || {};
   const [modal, setModal] = React.useState(false);
+  const [editId, setEditId] = React.useState(null);
+  const [menuId, setMenuId] = React.useState(null);
+  const [q, setQ] = React.useState("");
+  const [filtro, setFiltro] = React.useState("todas");
+  const [ordem, setOrdem] = React.useState("nome");
+  const [page, setPage] = React.useState(1);
+  const [loading, setLoading] = React.useState(true);
+  const [analise, setAnalise] = React.useState(false);
+  const pageSize = 6;
 
-  // só mostra as subscrições já existentes neste mês (a partir do mês em que foram criadas)
-  const ativas = [...todas].filter((s) => !s.desde || s.desde <= mes).sort((a, b) => (a.dia || 0) - (b.dia || 0));
+  React.useEffect(() => { const t = setTimeout(() => setLoading(false), 340); return () => clearTimeout(t); }, []);
+  React.useEffect(() => { if (!menuId) return; const h = () => setMenuId(null); document.addEventListener("click", h); return () => document.removeEventListener("click", h); }, [menuId]);
+  React.useEffect(() => { setPage(1); }, [q, filtro, ordem]);
+
   const isPago = (id) => !!(pagos[id] && pagos[id][mes]);
-  const togglePago = (id) => {
-    const cur = prem.get().pagosSub || {};
-    const ms = { ...(cur[id] || {}) };
-    if (ms[mes]) delete ms[mes]; else ms[mes] = true;
-    prem.update({ pagosSub: { ...cur, [id]: ms } });
-  };
-  const apagar = (id) => {
-    const cur = prem.get().pagosSub || {};
-    if (cur[id]) { const c2 = { ...cur }; delete c2[id]; prem.update({ pagosSub: c2 }); }
-    prem.remove("subscricoes", id);
-  };
+  const togglePago = (id) => { const cur = prem.get().pagosSub || {}; const ms = { ...(cur[id] || {}) }; if (ms[mes]) delete ms[mes]; else ms[mes] = true; prem.update({ pagosSub: { ...cur, [id]: ms } }); };
+  const apagar = (id) => { const cur = prem.get().pagosSub || {}; if (cur[id]) { const c2 = { ...cur }; delete c2[id]; prem.update({ pagosSub: c2 }); } prem.remove("subscricoes", id); };
+  const setEstado = (id, estado) => prem.edit("subscricoes", id, { estado });
 
-  const total = ativas.reduce((s, x) => s + (+x.valor || 0), 0);
-  const nPagas = ativas.filter((s) => isPago(s.id)).length;
-  const pagoTotal = ativas.filter((s) => isPago(s.id)).reduce((s, x) => s + (+x.valor || 0), 0);
-  const falta = total - pagoTotal;
+  const faturaveis = todas.filter((s) => subEstado(s) === "ativa");
+  const totalMes = faturaveis.reduce((a, s) => a + mensalDe(s), 0);
+  const totalAno = faturaveis.reduce((a, s) => a + anualDe(s), 0);
+  const nAtivas = faturaveis.length;
+  const nTrials = todas.filter((s) => subEstado(s) === "trial").length;
+  const prox30 = todas.filter((s) => { const st = subEstado(s); if (st === "cancelada" || st === "pausada") return false; const d = diasAte(proxRenovDate(s)); return d >= 0 && d <= 30; });
+
+  const porCat = {};
+  faturaveis.forEach((s) => { const c = subCat(s); porCat[c] = (porCat[c] || 0) + mensalDe(s); });
+  const donutData = Object.keys(porCat).map((c) => ({ key: c, nome: subCatMeta(c).nome, color: subCatMeta(c).color, valor: porCat[c] })).sort((a, b) => b.valor - a.valor);
+
+  const renovacoes = todas.filter((s) => subEstado(s) === "ativa" || subEstado(s) === "trial")
+    .map((s) => ({ s, d: proxRenovDate(s), dias: diasAte(proxRenovDate(s)) })).sort((a, b) => a.d - b.d).slice(0, 5);
+
+  const sugestoes = [];
+  Object.keys(porCat).forEach((c) => { const doCat = faturaveis.filter((s) => subCat(s) === c); if (doCat.length > 1) { const menor = Math.min.apply(null, doCat.map((s) => mensalDe(s))); sugestoes.push({ cat: c, n: doCat.length, poupanca: menor, nomes: doCat.map((s) => s.nome) }); } });
+  const poupancaTotal = sugestoes.reduce((a, x) => a + x.poupanca, 0);
+
+  let lista = todas.slice();
+  if (q.trim()) { const k = q.trim().toLowerCase(); lista = lista.filter((s) => s.nome.toLowerCase().includes(k) || subCatMeta(subCat(s)).nome.toLowerCase().includes(k)); }
+  if (filtro !== "todas") lista = lista.filter((s) => subEstado(s) === filtro);
+  lista.sort((a, b) => ordem === "valor" ? mensalDe(b) - mensalDe(a) : ordem === "renov" ? proxRenovDate(a) - proxRenovDate(b) : a.nome.localeCompare(b.nome));
+  const totalPags = Math.max(1, Math.ceil(lista.length / pageSize));
+  const pag = Math.min(page, totalPags);
+  const visiveis = lista.slice((pag - 1) * pageSize, pag * pageSize);
+
+  const abrirNova = () => { setEditId(null); setModal(true); };
+  const abrirEdit = (id) => { setEditId(id); setModal(true); };
+  const subEdit = editId ? todas.find((s) => s.id === editId) : null;
+  const dataCurta = (d) => d.getDate() + " " + BM.MESES[d.getMonth()].slice(0, 3).toLowerCase();
+
+  if (!loading && todas.length === 0) {
+    return (
+      <div className="content">
+        <PremActions label="Adicionar subscrição" onAdd={abrirNova} />
+        <EmptyState icon="tv" title="Ainda sem subscrições" msg="Adiciona os teus serviços recorrentes (Netflix, Spotify, iCloud…), define valor, ciclo e dia de renovação — o Rende+ trata das contas por ti."
+          action={<button className="btn btn-primary" onClick={abrirNova}><Icon name="plus" size={16} color="#fff" /> Adicionar subscrição</button>} />
+        {modal && <SubModal mesAtual={mes} sub={null} onClose={() => setModal(false)} onSave={(it) => { prem.add("subscricoes", it); setModal(false); }} />}
+      </div>
+    );
+  }
 
   return (
     <div className="content">
-      <PremActions label="Adicionar subscrição" onAdd={() => setModal(true)} />
-      {ativas.length === 0 ? (
-        <EmptyState icon="tv" title="Sem subscrições neste mês" msg="Adiciona as tuas subscrições (Netflix, Spotify, iCloud…), define o valor e o dia, e marca cada mês o que já pagaste."
-          action={<button className="btn btn-primary" onClick={() => setModal(true)}><Icon name="plus" size={16} color="#fff" /> Adicionar subscrição</button>} />
-      ) : (
-        <>
-          <div className="prem-stats">
-            <div className="prem-stat"><span className="prem-stat-l">Total do mês</span><span className="prem-stat-v tnum">{BM.eur(total)}</span><span className="prem-stat-s">{ativas.length} subscriç{ativas.length === 1 ? "ão" : "ões"}</span></div>
-            <div className="prem-stat ok"><span className="prem-stat-l">Já pago</span><span className="prem-stat-v tnum">{BM.eur(pagoTotal)}</span><span className="prem-stat-s">{nPagas} marcada{nPagas === 1 ? "" : "s"}</span></div>
-            <div className={"prem-stat" + (falta > 0 ? " danger" : "")}><span className="prem-stat-l">Falta pagar</span><span className="prem-stat-v tnum">{BM.eur(falta)}</span><span className="prem-stat-s">{ativas.length - nPagas} por pagar</span></div>
+      <PremActions label="Adicionar subscrição" onAdd={abrirNova} />
+
+      {loading ? <SubSkeleton /> : <>
+      <div className="ph-kpis sub-kpis">
+        <div className="pg-kpi"><div className="pg-kpi-ic" style={{ background: "color-mix(in srgb, var(--accent) 14%, transparent)" }}><Icon name="wallet" size={17} color="var(--accent)" /></div><div className="pg-kpi-v tnum">{BM.eur(totalMes)}</div><div className="pg-kpi-l">Gasto este mês</div></div>
+        <div className="pg-kpi"><div className="pg-kpi-ic" style={{ background: "color-mix(in srgb, #6366f1 15%, transparent)" }}><Icon name="chart" size={17} color="#6366f1" /></div><div className="pg-kpi-v tnum">{BM.eur(totalAno)}</div><div className="pg-kpi-l">Anual previsto</div></div>
+        <div className="pg-kpi"><div className="pg-kpi-ic" style={{ background: "color-mix(in srgb, var(--pos) 15%, transparent)" }}><Icon name="check" size={17} color="var(--pos)" /></div><div className="pg-kpi-v tnum">{nAtivas}</div><div className="pg-kpi-l">Subscrições ativas</div></div>
+        <div className="pg-kpi"><div className="pg-kpi-ic" style={{ background: "color-mix(in srgb, #f0913a 16%, transparent)" }}><Icon name="history" size={17} color="#f0913a" /></div><div className="pg-kpi-v tnum">{prox30.length}</div><div className="pg-kpi-l">Renovações (30 dias)</div></div>
+        <div className="pg-kpi"><div className="pg-kpi-ic" style={{ background: "color-mix(in srgb, #a855f7 15%, transparent)" }}><Icon name="spark" size={17} color="#a855f7" /></div><div className="pg-kpi-v tnum">{nTrials}</div><div className="pg-kpi-l">Trials ativos</div></div>
+      </div>
+
+      <div className="ph-layout">
+        <div className="ph-main">
+          <div className="ph-toolbar">
+            <div className="ph-search"><Icon name="search" size={15} color="var(--ink-3)" /><input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Pesquisar subscrição…" /></div>
+            <select className="select sub-fil" value={filtro} onChange={(e) => setFiltro(e.target.value)}><option value="todas">Todas</option><option value="ativa">Ativas</option><option value="trial">Trials</option><option value="pausada">Pausadas</option><option value="cancelada">Canceladas</option></select>
+            <select className="select sub-fil" value={ordem} onChange={(e) => setOrdem(e.target.value)}><option value="nome">Nome (A–Z)</option><option value="valor">Valor (maior)</option><option value="renov">Renovação</option></select>
+          </div>
+
+          <div className="card sub-tablewrap">
+            {visiveis.length === 0 ? <div className="muted tiny" style={{ fontWeight: 600, padding: 28, textAlign: "center" }}>Nenhuma subscrição corresponde aos filtros.</div> :
+            <table className="sub-table">
+              <thead><tr><th>Serviço</th><th>Categoria</th><th>Valor</th><th>Ciclo</th><th>Próxima renovação</th><th>Método</th><th>Estado</th><th aria-label="Ações"></th></tr></thead>
+              <tbody>
+                {visiveis.map((s) => {
+                  const cor = s.color || "var(--accent)";
+                  const d = proxRenovDate(s); const dd = diasAte(d);
+                  return (
+                    <tr key={s.id} className={subEstado(s) === "cancelada" ? "is-off" : ""}>
+                      <td><div className="sub-serv"><span className="prem-rico sm" style={{ background: "color-mix(in srgb, " + cor + " 14%, transparent)" }}><Icon name={s.icon || "tv"} size={16} color={cor} /></span><b>{s.nome}</b></div></td>
+                      <td><span className="sub-cat-tag" style={{ "--cc": subCatMeta(subCat(s)).color }}>{subCatMeta(subCat(s)).nome}</span></td>
+                      <td className="tnum" style={{ fontWeight: 800 }}>{BM.eur(s.valor)}</td>
+                      <td className="muted">{cicloLabel(s.ciclo)}</td>
+                      <td><div className="sub-renov"><b>{dataCurta(d)}</b><span className="muted tiny">{dd === 0 ? "hoje" : dd === 1 ? "amanhã" : "em " + dd + " dias"}</span></div></td>
+                      <td className="muted">{s.metodo || "—"}</td>
+                      <td>{subEstadoPill(s)}</td>
+                      <td style={{ position: "relative", textAlign: "right" }}>
+                        <button className="icon-btn" title="Ações" onClick={(e) => { e.stopPropagation(); setMenuId(menuId === s.id ? null : s.id); }}><Icon name="dots" size={18} color="var(--ink-2)" /></button>
+                        {menuId === s.id && (
+                          <div className="ph-menu" onClick={(e) => e.stopPropagation()}>
+                            <button onClick={() => { togglePago(s.id); setMenuId(null); }}><Icon name="check" size={15} color="var(--ink-2)" /> {isPago(s.id) ? "Desmarcar pago (mês)" : "Marcar pago (mês)"}</button>
+                            <button onClick={() => { abrirEdit(s.id); setMenuId(null); }}><Icon name="edit" size={15} color="var(--ink-2)" /> Editar</button>
+                            {subEstado(s) === "pausada"
+                              ? <button onClick={() => { setEstado(s.id, "ativa"); setMenuId(null); }}><Icon name="check" size={15} color="var(--ink-2)" /> Retomar</button>
+                              : <button onClick={() => { setEstado(s.id, "pausada"); setMenuId(null); }}><Icon name="history" size={15} color="var(--ink-2)" /> Pausar</button>}
+                            {subEstado(s) === "cancelada"
+                              ? <button onClick={() => { setEstado(s.id, "ativa"); setMenuId(null); }}><Icon name="check" size={15} color="var(--ink-2)" /> Reativar</button>
+                              : <button onClick={() => { setEstado(s.id, "cancelada"); setMenuId(null); }}><Icon name="x" size={15} color="var(--ink-2)" /> Cancelar</button>}
+                            <button className="danger" onClick={() => { apagar(s.id); setMenuId(null); }}><Icon name="trash" size={15} color="var(--neg)" /> Eliminar</button>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>}
+          </div>
+
+          {totalPags > 1 && (
+            <div className="sub-pag">
+              <button className="btn btn-soft" disabled={pag <= 1} onClick={() => setPage(pag - 1)}>Anterior</button>
+              <span className="muted tiny" style={{ fontWeight: 700 }}>Página {pag} de {totalPags} · {lista.length} subscriç{lista.length === 1 ? "ão" : "ões"}</span>
+              <button className="btn btn-soft" disabled={pag >= totalPags} onClick={() => setPage(pag + 1)}>Seguinte</button>
+            </div>
+          )}
+
+          <div className="card card-pad sub-discover">
+            <div className="sub-disc-ic"><Icon name="spark" size={22} color="var(--accent)" /></div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <b style={{ fontSize: 15 }}>Descobrir oportunidades de poupança</b>
+              <div className="muted" style={{ fontSize: 13, marginTop: 3, lineHeight: 1.55 }}>
+                {analise
+                  ? (sugestoes.length ? "Encontrámos " + sugestoes.length + " categoria(s) com serviços a mais. Poupança potencial de cerca de " + BM.eur(poupancaTotal) + "/mês (" + BM.eur(poupancaTotal * 12) + "/ano)." : "Boa! Não há serviços duplicados — as tuas subscrições parecem otimizadas. 🎉")
+                  : "Analisa as tuas subscrições para encontrar serviços semelhantes, duplicados ou pouco usados."}
+              </div>
+            </div>
+            <button className="btn btn-primary" style={{ flex: "none" }} onClick={() => setAnalise(true)}><Icon name="spark" size={15} color="#fff" /> Analisar subscrições</button>
+          </div>
+        </div>
+
+        <div className="ph-aside">
+          <div className="card card-pad">
+            <div className="prem-sec-t">Gastos por categoria</div>
+            {donutData.length === 0 ? <div className="muted tiny" style={{ fontWeight: 600, marginTop: 4 }}>Sem gastos ativos.</div> :
+              <>
+                <div style={{ display: "grid", placeItems: "center", padding: "6px 0 10px" }}>
+                  <DonutChart data={donutData} size={168} thickness={20} center={<div style={{ textAlign: "center" }}><div className="tnum" style={{ fontSize: 18, fontWeight: 800 }}>{BM.eur(totalMes)}</div><div className="muted tiny" style={{ fontWeight: 600 }}>por mês</div></div>} />
+                </div>
+                {donutData.map((d) => (<div className="sub-leg" key={d.key}><span className="sub-leg-dot" style={{ background: d.color }} /><span className="sub-leg-n">{d.nome}</span><span className="tnum sub-leg-v">{BM.eur(d.valor)}</span></div>))}
+              </>}
           </div>
 
           <div className="card card-pad">
-            {ativas.map((s) => {
-              const pago = isPago(s.id);
-              const cor = s.color || "var(--accent)";
-              return (
-                <div className={"prem-row" + (pago ? " is-paid" : "")} key={s.id}>
-                  <span className="prem-rico" style={{ background: `color-mix(in srgb, ${cor} 14%, transparent)` }}><Icon name={s.icon || "tv"} size={18} color={cor} /></span>
-                  <div className="prem-rtxt">
-                    <b style={pago ? { opacity: .55 } : null}>{s.nome}</b>
-                    <span className="muted" style={{ fontSize: 12.5 }}>Todos os dias {s.dia}{pago ? " · pago ✓" : ""}</span>
+            <div className="prem-sec-t">Próximas renovações</div>
+            {renovacoes.length === 0 ? <div className="muted tiny" style={{ fontWeight: 600, marginTop: 4 }}>Sem renovações próximas.</div> :
+              renovacoes.map(({ s, d, dias }) => {
+                const cor = s.color || "var(--accent)";
+                return (
+                  <div className="sub-up" key={s.id}>
+                    <span className="prem-rico sm" style={{ background: "color-mix(in srgb, " + cor + " 14%, transparent)" }}><Icon name={s.icon || "tv"} size={15} color={cor} /></span>
+                    <div style={{ flex: 1, minWidth: 0 }}><b style={{ fontSize: 13.5 }}>{s.nome}</b><div className="muted tiny">{dias === 0 ? "Renova hoje" : dias === 1 ? "Renova amanhã" : dataCurta(d) + " · em " + dias + " dias"}</div></div>
+                    <b className="tnum" style={{ fontSize: 13.5 }}>{BM.eur(s.valor)}</b>
                   </div>
-                  <div className="prem-ramt" style={pago ? { opacity: .55 } : null}>{BM.eur(s.valor)}</div>
-                  <div className="prem-rbtns">
-                    <button className={"sub-check" + (pago ? " on" : "")} title={pago ? "Marcar como por pagar" : "Marcar como pago"} onClick={() => togglePago(s.id)}>
-                      <Icon name="check" size={15} color={pago ? "#fff" : "var(--ink-3)"} />
-                    </button>
-                    <button className="icon-btn" title="Apagar subscrição" onClick={() => apagar(s.id)}><Icon name="trash" size={16} color="var(--neg)" /></button>
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })}
           </div>
-          <p className="tiny muted" style={{ textAlign: "center", marginTop: 14, fontWeight: 600, lineHeight: 1.5 }}>
-            Muda o mês nas setas lá em cima para marcares pagamentos de meses anteriores. Cada mês guarda as suas próprias marcas.
-          </p>
-        </>
-      )}
-      {modal && <SubModal mesAtual={mes} onClose={() => setModal(false)} onSave={(it) => { prem.add("subscricoes", it); setModal(false); }} />}
+
+          <div className="card card-pad">
+            <div className="prem-sec-t">Sugestões de poupança</div>
+            {sugestoes.length === 0 ? <div className="muted tiny" style={{ fontWeight: 600, marginTop: 4, lineHeight: 1.5 }}>Nada a assinalar — sem serviços duplicados. 👌</div> :
+              sugestoes.map((x) => (
+                <div className="sub-sugg" key={x.cat}>
+                  <Icon name="info" size={15} color="var(--accent)" />
+                  <div><div style={{ fontSize: 13, fontWeight: 700 }}>Tens {x.n} serviços de {subCatMeta(x.cat).nome}.</div><div className="muted tiny" style={{ marginTop: 2, lineHeight: 1.45 }}>{x.nomes.join(", ")} · poupa ~{BM.eur(x.poupanca)}/mês</div></div>
+                </div>
+              ))}
+          </div>
+        </div>
+      </div>
+
+      <div style={{ marginTop: 18 }}>
+        <div className="prem-sec-t" style={{ marginBottom: 10 }}>Calendário de renovações</div>
+        <SubCalendario subs={todas} />
+      </div>
+      </>}
+
+      {modal && <SubModal mesAtual={mes} sub={subEdit} onClose={() => { setModal(false); setEditId(null); }} onSave={(it) => { if (editId) prem.edit("subscricoes", editId, it); else prem.add("subscricoes", it); setModal(false); setEditId(null); }} />}
     </div>
   );
 }
