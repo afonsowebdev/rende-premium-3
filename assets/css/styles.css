@@ -1407,10 +1407,15 @@ body.drawer-lock { overflow: hidden; }
 .pg-tab.on .pg-soon-tag { background: var(--surface); }
 
 .pg-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
-.pg-kpi { padding: 15px 16px; display: flex; flex-direction: column; gap: 9px; }
+.pg-kpi { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-sm); padding: 16px 17px; display: flex; flex-direction: column; gap: 11px; transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease; }
+.pg-kpi:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); border-color: var(--border-strong); }
 .pg-kpi-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .pg-kpi-lbl { font-size: 11.5px; font-weight: 600; color: var(--ink-3); }
-.pg-kpi-ic { width: 30px; height: 30px; flex: none; border-radius: 50%; display: grid; place-items: center; }
+.pg-kpi-ic { width: 36px; height: 36px; flex: none; border-radius: 11px; display: grid; place-items: center; }
+.pg-kpi-v { font-size: 22px; font-weight: 800; letter-spacing: -.03em; color: var(--ink); line-height: 1.02; }
+.pg-kpi-v.pos { color: var(--pos); }
+.pg-kpi-v.neg { color: var(--neg); }
+.pg-kpi-l { font-size: 12px; font-weight: 600; color: var(--ink-3); }
 .pg-kpi-val { font-size: 19px; font-weight: 800; letter-spacing: -.02em; }
 .pg-kpi-val.pos { color: var(--pos); }
 .pg-kpi-val.neg { color: var(--neg); }
@@ -1693,3 +1698,33 @@ body.drawer-lock { overflow: hidden; }
 .pg-kpi.sk { pointer-events: none; }
 .sk-row { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--border); }
 .sk-row:last-child { border-bottom: none; }
+
+/* ============================================================
+   RENDE+ · Subscrições — refinamento visual (v2)
+   ============================================================ */
+/* KPIs: ícone + valor com melhor hierarquia (já são cartões definidos) */
+.sub-kpis .pg-kpi-v { font-size: 23px; }
+.sub-kpis .pg-kpi-ic { box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 0%, var(--border)); }
+
+/* toolbar: pesquisa bem mais larga e alinhada com os filtros */
+.sub-tools .ph-search { flex: 3; min-width: 280px; padding: 2px 14px; border-radius: var(--radius-sm); }
+.sub-tools .ph-search input { padding: 11px 0; font-size: 14px; }
+.sub-fil { border-radius: var(--radius-sm); padding: 11px 13px; min-width: 150px; }
+
+/* tabela: cabeçalho definido + cantos coerentes com o sistema */
+.sub-tablewrap { border-radius: var(--radius); }
+.sub-table thead th { background: var(--surface-2); }
+.sub-table thead th:first-child { padding-left: 18px; }
+.sub-table tbody td:first-child { padding-left: 18px; }
+.sub-table thead th:last-child, .sub-table tbody td:last-child { padding-right: 14px; }
+.sub-cat-tag, .sub-estado { border-radius: var(--radius-pill); }
+
+/* descobrir oportunidades: barra de acento para dar definição */
+.sub-discover { border-left: 3px solid var(--accent); }
+.sub-disc-ic { border-radius: 12px; }
+
+/* subtítulos por secção (mais detalhe em cada cartão) */
+.sub-sec-sub { font-size: 12px; font-weight: 500; color: var(--ink-3); margin: -4px 0 12px; line-height: 1.45; }
+
+/* legendas do donut com melhor leitura */
+.sub-leg + .sub-leg { border-top: 1px solid var(--border); }

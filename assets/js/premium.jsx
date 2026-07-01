@@ -1555,7 +1555,7 @@ function SubscricoesInner() {
 
       <div className="ph-layout">
         <div className="ph-main">
-          <div className="ph-toolbar">
+          <div className="ph-toolbar sub-tools">
             <div className="ph-search"><Icon name="search" size={15} color="var(--ink-3)" /><input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Pesquisar subscrição…" /></div>
             <select className="select sub-fil" value={filtro} onChange={(e) => setFiltro(e.target.value)}><option value="todas">Todas</option><option value="ativa">Ativas</option><option value="trial">Trials</option><option value="pausada">Pausadas</option><option value="cancelada">Canceladas</option></select>
             <select className="select sub-fil" value={ordem} onChange={(e) => setOrdem(e.target.value)}><option value="nome">Nome (A–Z)</option><option value="valor">Valor (maior)</option><option value="renov">Renovação</option></select>
@@ -1626,6 +1626,7 @@ function SubscricoesInner() {
         <div className="ph-aside">
           <div className="card card-pad">
             <div className="prem-sec-t">Gastos por categoria</div>
+            <div className="sub-sec-sub">Distribuição do custo mensal por tipo de serviço.</div>
             {donutData.length === 0 ? <div className="muted tiny" style={{ fontWeight: 600, marginTop: 4 }}>Sem gastos ativos.</div> :
               <>
                 <div style={{ display: "grid", placeItems: "center", padding: "6px 0 10px" }}>
@@ -1637,6 +1638,7 @@ function SubscricoesInner() {
 
           <div className="card card-pad">
             <div className="prem-sec-t">Próximas renovações</div>
+            <div className="sub-sec-sub">As próximas cobranças, por ordem cronológica.</div>
             {renovacoes.length === 0 ? <div className="muted tiny" style={{ fontWeight: 600, marginTop: 4 }}>Sem renovações próximas.</div> :
               renovacoes.map(({ s, d, dias }) => {
                 const cor = s.color || "var(--accent)";
@@ -1652,6 +1654,7 @@ function SubscricoesInner() {
 
           <div className="card card-pad">
             <div className="prem-sec-t">Sugestões de poupança</div>
+            <div className="sub-sec-sub">Serviços semelhantes ou duplicados que podes rever.</div>
             {sugestoes.length === 0 ? <div className="muted tiny" style={{ fontWeight: 600, marginTop: 4, lineHeight: 1.5 }}>Nada a assinalar — sem serviços duplicados. 👌</div> :
               sugestoes.map((x) => (
                 <div className="sub-sugg" key={x.cat}>
@@ -1664,7 +1667,8 @@ function SubscricoesInner() {
       </div>
 
       <div style={{ marginTop: 18 }}>
-        <div className="prem-sec-t" style={{ marginBottom: 10 }}>Calendário de renovações</div>
+        <div className="prem-sec-t" style={{ marginBottom: 4 }}>Calendário de renovações</div>
+        <div className="sub-sec-sub">Todas as datas de renovação do mês, num relance.</div>
         <SubCalendario subs={todas} />
       </div>
       </>}
