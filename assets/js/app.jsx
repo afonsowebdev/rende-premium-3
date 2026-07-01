@@ -45,7 +45,7 @@ const PREM_PAGE = {
   lembretes: ["Lembretes", "Nunca falhes um pagamento"],
   recorrentes: ["Recorrentes", "Despesas que se repetem todos os meses"],
   subscricoes: ["Subscrições", "As tuas contas de streaming, mês a mês"],
-  partilha: ["Partilha", "Contas divididas, sem confusão"],
+  partilha: ["Partilha", "Organiza despesas, acompanha pagamentos e gere grupos de forma simples"],
   previsao: ["Previsão", "Para onde vai o teu mês"],
   premium: ["Rende+ Premium", "Desbloqueia tudo"],
 };

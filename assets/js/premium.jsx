@@ -343,8 +343,10 @@ function RecorrentesInner() {
 
 /* ---------------- Partilha (orçamentos partilhados) ---------------- */
 const nomeDeEmail = (e) => { const p = ((e || "").split("@")[0] || "").replace(/[._-]/g, " "); return p.split(" ").map((w) => (w ? w[0].toUpperCase() + w.slice(1) : "")).join(" ").trim() || e; };
-function GrupoModal({ onClose, onSave }) {
-  const [nome, setNome] = React.useState("");
+function GrupoModal({ grupo, onClose, onSave }) {
+  const editing = !!grupo;
+  const [nome, setNome] = React.useState(editing ? (grupo.nome || "") : "");
+  const [descricao, setDescricao] = React.useState(editing ? (grupo.descricao || "") : "");
   const [email, setEmail] = React.useState("");
   const [convidados, setConvidados] = React.useState([]); // [{ email, nome }]
   const [err, setErr] = React.useState("");
@@ -356,22 +358,26 @@ function GrupoModal({ onClose, onSave }) {
   };
   const guardar = () => {
     if (!nome.trim()) return setErr("Dá um nome ao grupo.");
+    if (editing) { onSave({ nome: nome.trim(), descricao: descricao.trim() }); return; }
     const membros = convidados.map((c) => c.nome);
     const convites = convidados.map((c) => ({ email: c.email, nome: c.nome, estado: "pendente" }));
-    onSave({ nome: nome.trim(), membros, convites, despesas: [] });
+    onSave({ nome: nome.trim(), descricao: descricao.trim(), membros, convites, despesas: [] });
   };
   return (
-    <Modal title="Novo grupo" onClose={onClose}
-      footer={<><button className="btn btn-ghost" onClick={onClose}>Cancelar</button><button className="btn btn-primary" onClick={guardar}><Icon name="check" size={14} color="#fff" /> Criar grupo</button></>}>
+    <Modal title={editing ? "Editar grupo" : "Novo grupo"} onClose={onClose}
+      footer={<><button className="btn btn-ghost" onClick={onClose}>Cancelar</button><button className="btn btn-primary" onClick={guardar}><Icon name="check" size={14} color="#fff" /> {editing ? "Guardar" : "Criar grupo"}</button></>}>
       <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
         <Field label="Nome do grupo"><input className="input" autoFocus value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Ex: Casa do Porto, Viagem…" /></Field>
-        <Field label="Convidar por email" hint="Adiciona um de cada vez. Tu (Eu) já estás incluído.">
-          <div className="row" style={{ gap: 8 }}>
-            <input className="input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addConvidado(); } }} placeholder="email@exemplo.com" />
-            <button type="button" className="btn btn-soft" style={{ flex: "none" }} onClick={addConvidado}><Icon name="plus" size={14} /> Adicionar</button>
-          </div>
-        </Field>
-        {convidados.length > 0 && (
+        <Field label="Descrição" hint="opcional"><input className="input" value={descricao} onChange={(e) => setDescricao(e.target.value)} placeholder="Ex: Renda e contas da casa" /></Field>
+        {!editing && (
+          <Field label="Convidar por email" hint="Adiciona um de cada vez. Tu (Eu) já estás incluído.">
+            <div className="row" style={{ gap: 8 }}>
+              <input className="input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addConvidado(); } }} placeholder="email@exemplo.com" />
+              <button type="button" className="btn btn-soft" style={{ flex: "none" }} onClick={addConvidado}><Icon name="plus" size={14} /> Adicionar</button>
+            </div>
+          </Field>
+        )}
+        {!editing && convidados.length > 0 && (
           <div className="row" style={{ gap: 8, flexWrap: "wrap" }}>
             {convidados.map((c) => (
               <span key={c.email} className="chip" style={{ gap: 7 }}>{c.nome}
@@ -602,6 +608,17 @@ function PartilhaInner() {
   const [remMembro, setRemMembro] = React.useState(null);
   const [delId, setDelId] = React.useState(null);
   const [convEmail, setConvEmail] = React.useState("");
+  const [q, setQ] = React.useState("");
+  const [filtro, setFiltro] = React.useState("ativos");
+  const [ordem, setOrdem] = React.useState("recentes");
+  const [editId, setEditId] = React.useState(null);
+  const [menuId, setMenuId] = React.useState(null);
+  React.useEffect(() => {
+    if (!menuId) return;
+    const h = (e) => { if (!e.target.closest || !e.target.closest(".ph-menu-wrap")) setMenuId(null); };
+    document.addEventListener("mousedown", h);
+    return () => document.removeEventListener("mousedown", h);
+  }, [menuId]);
   const aberto = grupos.find((g) => g.id === openId);
 
   if (aberto) {
@@ -855,41 +872,150 @@ function PartilhaInner() {
     );
   }
 
+  const ultAtual = (g) => { const ds = (g.despesas || []).map((e) => e.data).filter(Boolean).sort(); return ds.length ? ds[ds.length - 1] : ""; };
+  let sTotal = 0, sReceber = 0, sPagar = 0, sConv = 0, sAtivos = 0;
+  grupos.forEach((g) => { const s = grupoStats(g); sTotal += s.total; sReceber += s.aReceber; sPagar += s.emDivida; sConv += (g.convites || []).filter((c) => c.estado === "pendente").length; if (!g.arquivado) sAtivos++; });
+  const kpisTop = [
+    { lbl: "Total em grupos", val: BM.eur(sTotal), sub: grupos.length + " grupo(s)", ic: "wallet", c: "#14a06b" },
+    { lbl: "A receber", val: BM.eur(sReceber), sub: "no total", ic: "arrowUp", c: "#14a06b", tone: "pos" },
+    { lbl: "A pagar", val: BM.eur(sPagar), sub: "no total", ic: "arrowDown", c: "#e5484d", tone: "neg" },
+    { lbl: "Grupos ativos", val: String(sAtivos), sub: (grupos.length - sAtivos) + " arquivado(s)", ic: "users", c: "#3b82f6" },
+    { lbl: "Convites pendentes", val: String(sConv), sub: "por aceitar", ic: "bell", c: "#d9840a" },
+  ];
+  const q2 = q.trim().toLowerCase();
+  let lista = grupos.filter((g) => {
+    if (filtro === "ativos" && g.arquivado) return false;
+    if (filtro === "arquivados" && !g.arquivado) return false;
+    if (q2 && !((g.nome || "").toLowerCase().includes(q2) || (g.descricao || "").toLowerCase().includes(q2))) return false;
+    return true;
+  }).sort((a, b) => {
+    if (ordem === "nome") return (a.nome || "").localeCompare(b.nome || "");
+    if (ordem === "valor") return grupoStats(b).total - grupoStats(a).total;
+    return (ultAtual(b) || "").localeCompare(ultAtual(a) || "");
+  });
+  const convitesPend = [];
+  grupos.forEach((g) => (g.convites || []).forEach((c) => { if (c.estado === "pendente") convitesPend.push({ g, c }); }));
+  const atividade = [];
+  grupos.forEach((g) => (g.despesas || []).forEach((e) => atividade.push({ g, e })));
+  atividade.sort((a, b) => (b.e.data || "").localeCompare(a.e.data || ""));
+  const ativRecente = atividade.slice(0, 6);
+
   return (
     <div className="content">
-      <PremActions label="Novo grupo" onAdd={() => setModal(true)} />
-      {grupos.length === 0 ? (
-        <EmptyState icon="users" title="Sem grupos" msg="Cria um grupo para dividires a casa, a viagem ou o jantar com quem quiseres. Ideal para quem vive em casa partilhada."
-          action={<button className="btn btn-primary" onClick={() => setModal(true)}><Icon name="plus" size={16} color="#fff" /> Criar grupo</button>} />
-      ) : (
-        <div className="prem-groups">
-          {grupos.map((g) => {
-            const net = balancos(g);
-            const meu = net["Eu"] || 0;
-            const total = (g.despesas || []).reduce((s, e) => s + (+e.valor || 0), 0);
-            const pessoas = ["Eu", ...(g.membros || [])];
-            return (
-              <div className="card card-pad prem-gcard" key={g.id}>
-                <div className="row" style={{ justifyContent: "space-between" }}>
-                  <span className="prem-gico"><Icon name="users" size={18} color="var(--accent)" /></span>
-                  <button className="icon-btn" title="Apagar grupo" onClick={() => setDelId(g.id)}><Icon name="trash" size={15} color="var(--neg)" /></button>
-                </div>
-                <b style={{ fontSize: 16, marginTop: 10, display: "block" }}>{g.nome}</b>
-                <div className="prem-avatars">
-                  {pessoas.slice(0, 5).map((p) => <span className="prem-avatar" key={p} title={p}>{inicial(p)}</span>)}
-                  {pessoas.length > 5 && <span className="prem-avatar more">+{pessoas.length - 5}</span>}
-                </div>
-                <div className="row" style={{ justifyContent: "space-between", marginTop: 6 }}>
-                  <span className="tiny muted" style={{ fontWeight: 700 }}>Total · {BM.eur(total)}</span>
-                  {balTag(meu)}
-                </div>
-                <button className="btn btn-soft" style={{ marginTop: 12, width: "100%", justifyContent: "center" }} onClick={() => { setTab("dashboard"); setOpenId(g.id); }}>Abrir grupo</button>
-              </div>
-            );
-          })}
+      <div className="ph-kpis">
+        {kpisTop.map((k, i) => (
+          <div className="card pg-kpi" key={i}>
+            <div className="pg-kpi-top"><span className="pg-kpi-lbl">{k.lbl}</span><span className="pg-kpi-ic" style={{ background: k.c }}><Icon name={k.ic} size={15} color="#fff" /></span></div>
+            <div className={"pg-kpi-val" + (k.tone ? " " + k.tone : "")}>{k.val}</div>
+            <div className="pg-kpi-sub">{k.sub}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="ph-layout">
+        <div className="ph-main">
+          <div className="ph-toolbar">
+            <div className="ph-search"><Icon name="search" size={16} color="var(--ink-3)" /><input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Procurar grupo…" /></div>
+            <select className="select ph-tool-sel" value={filtro} onChange={(e) => setFiltro(e.target.value)}><option value="ativos">Ativos</option><option value="arquivados">Arquivados</option><option value="todos">Todos</option></select>
+            <select className="select ph-tool-sel" value={ordem} onChange={(e) => setOrdem(e.target.value)}><option value="recentes">Recentes</option><option value="nome">Nome</option><option value="valor">Valor</option></select>
+            <button className="btn btn-primary ph-tool-add" onClick={() => setModal(true)}><Icon name="plus" size={15} color="#fff" /> Novo grupo</button>
+          </div>
+
+          <div className="pg-sec-h"><div className="prem-sec-t">Os meus grupos</div><span className="tiny muted" style={{ fontWeight: 600 }}>{lista.length} de {grupos.length}</span></div>
+
+          {lista.length === 0 ? (
+            <div className="card card-pad" style={{ textAlign: "center", padding: "32px 20px" }}>
+              <div className="muted" style={{ fontWeight: 600, fontSize: 13.5 }}>{grupos.length === 0 ? "Ainda não tens grupos — cria o primeiro já a seguir." : "Nenhum grupo corresponde à pesquisa."}</div>
+            </div>
+          ) : (
+            <div className="ph-groups">
+              {lista.map((g) => {
+                const s = grupoStats(g);
+                const pessoas = ["Eu", ...(g.membros || [])];
+                const ua = ultAtual(g);
+                const desc = g.descricao || (pessoas.length > 1 ? "Grupo com " + pessoas.length + " membros" : "Grupo pessoal");
+                return (
+                  <div className="card ph-gcard" key={g.id}>
+                    <div className="ph-gcard-top">
+                      <span className="ph-gico"><Icon name="users" size={18} color="#fff" /></span>
+                      <span className={"ph-state " + (g.arquivado ? "arch" : "on")}>{g.arquivado ? "Arquivado" : "Ativo"}</span>
+                      <div className="ph-menu-wrap">
+                        <button className="icon-btn" title="Ações" onClick={() => setMenuId(menuId === g.id ? null : g.id)}><Icon name="dots" size={18} /></button>
+                        {menuId === g.id && (
+                          <div className="ph-menu">
+                            <button onClick={() => { setMenuId(null); setEditId(g.id); }}><Icon name="edit" size={15} /> Editar</button>
+                            <button onClick={() => { setMenuId(null); setTab("membros"); setOpenId(g.id); }}><Icon name="users" size={15} /> Convidar membros</button>
+                            <button onClick={() => { setMenuId(null); prem.edit("grupos", g.id, { arquivado: !g.arquivado }); }}><Icon name="archive" size={15} /> {g.arquivado ? "Desarquivar" : "Arquivar"}</button>
+                            <button className="danger" onClick={() => { setMenuId(null); setDelId(g.id); }}><Icon name="trash" size={15} /> Eliminar</button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <b className="ph-gname">{g.nome}</b>
+                    <div className="ph-gdesc">{desc}</div>
+                    <div className="ph-gav">
+                      {pessoas.slice(0, 5).map((p) => <span className="prem-avatar sm" key={p} title={p}>{inicial(p)}</span>)}
+                      {pessoas.length > 5 && <span className="prem-avatar more sm">+{pessoas.length - 5}</span>}
+                      <span className="ph-gmembers">{pessoas.length} membros</span>
+                    </div>
+                    <div className="ph-gstats">
+                      <div><span className="ph-gs-l">Movimentado</span><span className="ph-gs-v">{BM.eur(s.total)}</span></div>
+                      <div><span className="ph-gs-l">A receber</span><span className="ph-gs-v pos">{BM.eur(s.aReceber)}</span></div>
+                      <div><span className="ph-gs-l">A pagar</span><span className="ph-gs-v neg">{BM.eur(s.emDivida)}</span></div>
+                    </div>
+                    <div className="ph-gfoot"><span className="tiny muted">{ua ? "Atualizado " + BM.fmtData(ua) : "Sem atividade"}</span></div>
+                    <button className="btn btn-primary ph-gopen" onClick={() => { setTab("dashboard"); setOpenId(g.id); }}>Abrir grupo <span style={{ display: "grid" }}><Icon name="chevR" size={15} color="#fff" /></span></button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          <div className="ph-create" onClick={() => setModal(true)}>
+            <div className="ph-create-ic"><Icon name="plus" size={26} color="var(--accent)" /></div>
+            <div className="ph-create-txt"><b>Criar um novo grupo</b><span>Divide a casa, uma viagem ou o jantar. Convida por email e acompanha tudo num só sítio.</span></div>
+            <button className="btn btn-primary" onClick={(e) => { e.stopPropagation(); setModal(true); }}><Icon name="plus" size={15} color="#fff" /> Criar novo grupo</button>
+          </div>
         </div>
-      )}
+
+        <aside className="ph-aside">
+          <div className="card card-pad">
+            <div className="prem-sec-t">Convites recebidos</div>
+            {convitesPend.length === 0 ? <div className="muted tiny" style={{ fontWeight: 600, marginTop: 4 }}>Sem convites pendentes.</div> :
+              convitesPend.map(({ g, c }, i) => (
+                <div className="ph-inv" key={i}>
+                  <span className="prem-avatar sm">{inicial(c.nome || "?")}</span>
+                  <div className="ph-inv-txt"><b>{g.nome}</b><span>{c.email || c.nome}</span></div>
+                  <div className="ph-inv-btns">
+                    <button className="btn btn-soft" style={{ padding: "5px 10px" }} onClick={() => prem.edit("grupos", g.id, { convites: (g.convites || []).map((x) => (x.nome === c.nome ? { ...x, estado: "ativo" } : x)) })}>Aceitar</button>
+                    <button className="icon-btn" title="Recusar" onClick={() => prem.edit("grupos", g.id, { convites: (g.convites || []).filter((x) => x.nome !== c.nome), membros: (g.membros || []).filter((m) => m !== c.nome) })}><span style={{ transform: "rotate(45deg)", display: "grid" }}><Icon name="plus" size={15} color="var(--ink-3)" /></span></button>
+                  </div>
+                </div>
+              ))}
+          </div>
+
+          <div className="card card-pad">
+            <div className="prem-sec-t">Atividade recente</div>
+            {ativRecente.length === 0 ? <div className="muted tiny" style={{ fontWeight: 600, marginTop: 4 }}>Ainda sem atividade.</div> :
+              <div className="pg-tl" style={{ marginTop: 4 }}>
+                {ativRecente.map(({ g, e }, i) => (
+                  <div className="pg-tli" key={i}>
+                    <span className="pg-tli-ic"><Icon name="plus" size={13} color="var(--accent)" /></span>
+                    <div><div className="pg-tli-txt"><b>{e.pagador}</b> adicionou <b>{e.titulo}</b> · <span className="muted">{g.nome}</span></div><div className="pg-tli-time">{e.data ? BM.fmtData(e.data) : ""}</div></div>
+                  </div>
+                ))}
+              </div>}
+          </div>
+
+          <div className="card card-pad ph-priv">
+            <span className="ph-priv-ic"><Icon name="shield" size={18} color="var(--accent)" /></span>
+            <div><b style={{ fontSize: 13.5 }}>Privacidade & segurança</b><div className="muted tiny" style={{ fontWeight: 500, marginTop: 3, lineHeight: 1.55 }}>Só os membros do grupo veem as suas despesas. Podes exigir PIN para ações sensíveis nas Definições.</div></div>
+          </div>
+        </aside>
+      </div>
+
       {modal && <GrupoModal onClose={() => setModal(false)} onSave={(it) => { prem.add("grupos", it); setModal(false); }} />}
+      {editId && grupos.find((g) => g.id === editId) && <GrupoModal grupo={grupos.find((g) => g.id === editId)} onClose={() => setEditId(null)} onSave={(it) => { prem.edit("grupos", editId, it); setEditId(null); }} />}
       {delId && (window.RendeLock && window.RendeLock.hasPin()
         ? <RLConfirmPin title="Eliminar grupo" desc="Vais eliminar este grupo e todas as suas despesas. Esta ação é irreversível." onConfirm={() => prem.remove("grupos", delId)} onClose={() => setDelId(null)} />
         : <Modal title="Eliminar grupo" onClose={() => setDelId(null)}
