@@ -1665,9 +1665,9 @@ body.drawer-lock { overflow: hidden; }
 
 /* tabela */
 .sub-tablewrap { margin-top: 10px; overflow-x: auto; padding: 0; }
-.sub-table { width: 100%; border-collapse: collapse; min-width: 720px; }
-.sub-table thead th { text-align: left; font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-3); padding: 13px 16px; border-bottom: 1px solid var(--border); white-space: nowrap; }
-.sub-table tbody td { padding: 13px 16px; border-bottom: 1px solid var(--border); font-size: 13.5px; color: var(--ink); vertical-align: middle; white-space: nowrap; }
+.sub-table { width: 100%; border-collapse: collapse; min-width: 580px; }
+.sub-table thead th { text-align: left; font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-3); padding: 11px 13px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+.sub-table tbody td { padding: 11px 13px; border-bottom: 1px solid var(--border); font-size: 13.5px; color: var(--ink); vertical-align: middle; white-space: nowrap; }
 .sub-table tbody tr:last-child td { border-bottom: none; }
 .sub-table tbody tr { transition: background .12s ease; }
 .sub-table tbody tr:hover { background: var(--surface-2); }
@@ -1739,3 +1739,24 @@ body.drawer-lock { overflow: hidden; }
 
 /* legendas do donut com melhor leitura */
 .sub-leg + .sub-leg { border-top: 1px solid var(--border); }
+
+/* ============================================================
+   RENDE+ · Subscrições — tabela responsiva + calendário compacto (v3)
+   ============================================================ */
+/* coluna de ações sempre visível (fixa à direita, mesmo com scroll) */
+.sub-table th.sub-col-act, .sub-table td.sub-col-act { position: sticky; right: 0; width: 46px; text-align: right; background: var(--surface); box-shadow: -9px 0 9px -9px rgba(0,0,0,.22); }
+.sub-table thead th.sub-col-act { background: var(--surface-2); }
+.sub-table tbody tr:hover td.sub-col-act { background: var(--surface-2); }
+
+/* "Método" está quase sempre vazio: esconder quando o espaço é curto */
+@media (max-width: 1024px) { .sub-col-m { display: none; } }
+
+/* calendário de renovações mais pequeno e denso */
+.sub-cal { max-width: 640px; }
+.sub-cal .card-pad { padding: 14px; }
+.sub-cal .pg-cal-head { margin-bottom: 8px; }
+.sub-cal .pg-cal-grid { gap: 4px; }
+.sub-cal .pg-cal-dow span { font-size: 10px; }
+.sub-cal .pg-cal-cell { aspect-ratio: auto; min-height: 34px; padding: 4px 6px; border-radius: var(--radius-sm); }
+.sub-cal .pg-cal-d { font-size: 11px; }
+.sub-cal .pg-cal-dot { min-width: 14px; height: 14px; font-size: 9px; right: 4px; bottom: 4px; }

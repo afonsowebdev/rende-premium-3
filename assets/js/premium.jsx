@@ -1562,7 +1562,7 @@ function SubscricoesInner() {
           <div className="card sub-tablewrap">
             {visiveis.length === 0 ? <div className="muted tiny" style={{ fontWeight: 600, padding: 28, textAlign: "center" }}>Nenhuma subscrição corresponde aos filtros.</div> :
             <table className="sub-table">
-              <thead><tr><th>Serviço</th><th>Categoria</th><th>Valor</th><th>Ciclo</th><th>Próxima renovação</th><th>Método</th><th>Estado</th><th aria-label="Ações"></th></tr></thead>
+              <thead><tr><th>Serviço</th><th>Categoria</th><th>Valor</th><th>Ciclo</th><th>Próxima renovação</th><th className="sub-col-m">Método</th><th>Estado</th><th className="sub-col-act" aria-label="Ações"></th></tr></thead>
               <tbody>
                 {visiveis.map((s) => {
                   const cor = s.color || "var(--accent)";
@@ -1574,9 +1574,9 @@ function SubscricoesInner() {
                       <td className="tnum" style={{ fontWeight: 800 }}>{BM.eur(s.valor)}</td>
                       <td className="muted">{cicloLabel(s.ciclo)}</td>
                       <td><div className="sub-renov"><b>{dataCurta(d)}</b><span className="muted tiny">{dd === 0 ? "hoje" : dd === 1 ? "amanhã" : "em " + dd + " dias"}</span></div></td>
-                      <td className="muted">{s.metodo || "—"}</td>
+                      <td className="muted sub-col-m">{s.metodo || "—"}</td>
                       <td>{subEstadoPill(s)}</td>
-                      <td style={{ position: "relative", textAlign: "right" }}>
+                      <td className="sub-col-act">
                         <button className="icon-btn" title="Ações" onClick={(e) => { e.stopPropagation(); setMenuId(menuId === s.id ? null : s.id); }}><Icon name="dots" size={18} color="var(--ink-2)" /></button>
                         {menuId === s.id && (
                           <div className="ph-menu" onClick={(e) => e.stopPropagation()}>
@@ -1667,7 +1667,7 @@ function SubscricoesInner() {
       <div style={{ marginTop: 10 }}>
         <div className="prem-sec-t" style={{ marginBottom: 4 }}>Calendário de renovações</div>
         <div className="sub-sec-sub">Todas as datas de renovação do mês, num relance.</div>
-        <SubCalendario subs={todas} />
+        <div className="sub-cal"><SubCalendario subs={todas} /></div>
       </div>
       </>}
 
